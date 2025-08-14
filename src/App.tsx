@@ -1,23 +1,36 @@
-
-import { Routes, Route, Link } from 'react-router-dom';
-import Home from './Home';
-
-function About() {
-  return <h2>About Page</h2>;
-}
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Header from './components/Header';
+import HomePage from './pages/HomePage';
+import ChatbotPage from './pages/ChatbotPage';
+import StatutePage from './pages/StatutePage';
+import ForumPage from './pages/ForumPage';
+import ConsultationPage from './pages/ConsultationPage';
+import StudentDashboard from './pages/StudentDashboard';
+import LawyerDashboard from './pages/LawyerDashboard';
+import AuthPage from './pages/AuthPage';
+import AboutPage from './pages/AboutPage';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 function App() {
   return (
-    <>
-      <nav style={{ marginBottom: 20 }}>
-        <Link to="/" style={{ marginRight: 10 }}>Home</Link>
-        <Link to="/about">About</Link>
-      </nav>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-      </Routes>
-    </>
+    <LanguageProvider>
+      <Router>
+        <div className="min-h-screen bg-gray-50">
+          <Header />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/chatbot" element={<ChatbotPage />} />
+            <Route path="/statutes" element={<StatutePage />} />
+            <Route path="/forum" element={<ForumPage />} />
+            <Route path="/consultation" element={<ConsultationPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/student-dashboard" element={<StudentDashboard />} />
+            <Route path="/lawyer-dashboard" element={<LawyerDashboard />} />
+            <Route path="/auth" element={<AuthPage />} />
+          </Routes>
+        </div>
+      </Router>
+    </LanguageProvider>
   );
 }
 
