@@ -1,25 +1,57 @@
 # LexHub Frontend
 
-Frontend repository for LexHub IP Sri Lanka, built with React.js and Tailwind CSS, powering an AI-driven legal awareness platform.
-
-## Overview
-LexHub IP Sri Lanka is the first phase of a larger initiative, LexHub Sri Lanka, designed to revolutionize access to legal knowledge in Sri Lanka, starting with Intellectual Property (IP) law. This frontend repository contains the user interface for an AI-powered platform, providing accessible legal information, a searchable statute database, and interactive features like an AI chatbot. Developed by the Wallabies team for DEVTHON 2.0.
-
-## Features
-- AI-driven chatbot for IP law queries (trademarks, copyrights, patents).
-- Searchable database of Sri Lankan IP statutes.
-- Responsive design with trilingual support (English, Sinhala, Tamil).
-- User-friendly interface built with React.js and Tailwind CSS.
-- Integration with Firebase Authentication and backend APIs.
+A modern legal hub frontend application built with React, TypeScript, and Vite.
 
 ## Tech Stack
-- **Frontend**: React.js, Tailwind CSS
-- **Authentication**: Firebase Authentication
-- **Dependencies**: Managed via npm or yarn
-- **Development Tools**: Vite (or Create React App), Git, GitHub Actions
 
-## Installation
-1. **Clone the Repository**:
+- **React 18.3.1** - Modern React with hooks and concurrent features
+- **TypeScript 5.5.3** - Static type checking for enhanced development experience  
+- **React Router DOM 7.7.1** - Client-side routing for single-page application navigation
+- **Vite** - Fast build tool and development server
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (version 16 or higher)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
    ```bash
-   git clone https://github.com/Wallabies25/lexhub-frontend.git
-   cd lexhub-frontend
+   npm install
+   ```
+
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open [http://localhost:5173](http://localhost:5173) to view the application
+
+## Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+
+## Project Structure
+
+```
+src/
+├── App.tsx          # Main application component with routing
+├── Home.tsx         # Home page component
+├── main.tsx         # Application entry point
+├── index.css        # Global styles
+└── assets/          # Static assets
+```
+
+## Contributing
+
+1. Create a feature branch
+2. Make your changes
+3. Test thoroughly
+4. Submit a pull request
