@@ -10,7 +10,7 @@ const Header: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
 
   const navItems = [
-    { path: '/', label: t('nav.home') },
+    { path: '/home', label: t('nav.home') },
     { path: '/chatbot', label: t('nav.chatbot') },
     { path: '/statutes', label: t('nav.statutes') },
     { path: '/forum', label: t('nav.forum') },

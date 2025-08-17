@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Scale, Shield, User, Mail, Lock, Phone, FileText } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useNavigate } from 'react-router-dom';
 
 const AuthPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'lawyer'>('login');
@@ -17,6 +20,36 @@ const AuthPage: React.FC = () => {
     mfaEnabled: false,
   });
   const { t } = useLanguage();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (sessionStorage.getItem('showConsultToast') === '1') {
+      toast.info('For Consult a lawyer Sign Up Please', { position: 'top-center', autoClose: 3000 });
+      sessionStorage.removeItem('showConsultToast');
+    }
+    if (sessionStorage.getItem('showSearchToast') === '1') {
+      toast.info('Please Sign Up First', { position: 'top-center', autoClose: 3000 });
+      sessionStorage.removeItem('showSearchToast');
+    }
+  }, []);
+
+  // Add effect to block navigation if not logged in
+  React.useEffect(() => {
+    const handleNavClick = (e: MouseEvent) => {
+      // Only block if not logged in (replace with real auth check)
+      const isLoggedIn = false; // TODO: Replace with real auth logic
+      if (!isLoggedIn) {
+        const target = e.target as HTMLElement;
+        // Block only nav links in header
+        if (target.closest('nav, .header-nav, .main-nav, .top-nav')) {
+          e.preventDefault();
+          toast.info('Please log in to access this feature.', { position: 'top-center', autoClose: 2000 });
+        }
+      }
+    };
+    document.addEventListener('click', handleNavClick, true);
+    return () => document.removeEventListener('click', handleNavClick, true);
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -45,6 +78,7 @@ const AuthPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-emerald-600 pt-16">
+      <ToastContainer />
       <div className="max-w-md mx-auto px-4 py-8">
         {/* Logo */}
         <div className="text-center mb-8">
