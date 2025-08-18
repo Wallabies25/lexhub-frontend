@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Scale, Shield, User, Mail, Lock, Phone, FileText } from 'lucide-react';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
+import { useNavigate } from 'react-router-dom';
 
 const AuthPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'lawyer'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [showPrivacyNotice, setShowPrivacyNotice] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -16,7 +21,15 @@ const AuthPage: React.FC = () => {
     specialty: '',
     mfaEnabled: false,
   });
-  const { t } = useLanguage();
+  const { login, register } = useAuth();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
+
+  const handleTabChange = (tab: 'login' | 'signup' | 'lawyer') => {
+    setActiveTab(tab);
+    setError(null);
+    setSuccess(null);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -26,10 +39,147 @@ const AuthPage: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validatePassword = (password: string): string | null => {
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters long';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'Password must contain at least one lowercase letter';
+    }
+    if (!/[0-9]/.test(password)) {
+      return 'Password must contain at least one number';
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      return 'Password must contain at least one special character';
+    }
+    return null;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log('Form submitted:', formData);
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      if (activeTab === 'login') {
+        console.log('AuthPage: Attempting login');
+        // Handle login
+        const userRole = await login({
+          email: formData.email,
+          password: formData.password
+        });
+        
+        console.log('AuthPage: Login successful, user role:', userRole);
+        
+        // Show success toast
+        showToast('Login successful! Welcome back.', 'success');
+        
+        // Small delay to show the toast before navigation
+        setTimeout(() => {
+          // Redirect to appropriate dashboard based on user role
+          if (userRole === 'lawyer') {
+            navigate('/lawyer-dashboard');
+          } else if (userRole === 'student') {
+            navigate('/student-dashboard');
+          } else {
+            navigate('/'); // Default to home page for other roles
+          }
+        }, 1000);
+        
+      } else if (activeTab === 'signup') {
+        // Handle student/user registration
+        if (formData.password !== formData.confirmPassword) {
+          setError('Passwords do not match');
+          return;
+        }
+        
+        // Validate password strength
+        const passwordError = validatePassword(formData.password);
+        if (passwordError) {
+          setError(passwordError);
+          return;
+        }
+        
+        await register({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          role: 'student'
+        });
+        
+        // Show success message and switch to login tab
+        showToast('Account created successfully! Please login with your credentials.', 'success');
+        setSuccess('Account created successfully! Please login with your credentials.');
+        setActiveTab('login');
+        // Clear form data
+        setFormData({
+          email: formData.email, // Keep email for convenience
+          password: '',
+          confirmPassword: '',
+          name: '',
+          phone: '',
+          licenseNumber: '',
+          specialty: '',
+          mfaEnabled: false,
+        });
+        
+      } else if (activeTab === 'lawyer') {
+        // Handle lawyer registration
+        if (formData.password !== formData.confirmPassword) {
+          setError('Passwords do not match');
+          return;
+        }
+        
+        // Validate password strength
+        const passwordError = validatePassword(formData.password);
+        if (passwordError) {
+          setError(passwordError);
+          return;
+        }
+        
+        // For now, use regular registration since lawyer endpoint has DB issues
+        await register({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          role: 'lawyer',
+          phone: formData.phone,
+          licenseNumber: formData.licenseNumber,
+          specialty: formData.specialty
+        });
+        
+        // Show success message and switch to login tab
+        showToast('Lawyer account created successfully! Please login with your credentials.', 'success');
+        setSuccess('Lawyer account created successfully! Please login with your credentials.');
+        setActiveTab('login');
+        // Clear form data
+        setFormData({
+          email: formData.email, // Keep email for convenience
+          password: '',
+          confirmPassword: '',
+          name: '',
+          phone: '',
+          licenseNumber: '',
+          specialty: '',
+          mfaEnabled: false,
+        });
+      }
+    } catch (err) {
+      console.error('AuthPage: Error occurred', err);
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.';
+      
+      // Show error toast
+      showToast(errorMessage, 'error');
+      
+      // Also set error state for in-form display
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const specialties = [
@@ -63,7 +213,7 @@ const AuthPage: React.FC = () => {
         <div className="bg-white bg-opacity-10 rounded-xl p-1 mb-6">
           <div className="grid grid-cols-3 gap-1">
             <button
-              onClick={() => setActiveTab('login')}
+              onClick={() => handleTabChange('login')}
               className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'login'
                   ? 'bg-white text-blue-900'
@@ -73,7 +223,7 @@ const AuthPage: React.FC = () => {
               Login
             </button>
             <button
-              onClick={() => setActiveTab('signup')}
+              onClick={() => handleTabChange('signup')}
               className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'signup'
                   ? 'bg-white text-blue-900'
@@ -83,7 +233,7 @@ const AuthPage: React.FC = () => {
               Sign Up
             </button>
             <button
-              onClick={() => setActiveTab('lawyer')}
+              onClick={() => handleTabChange('lawyer')}
               className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'lawyer'
                   ? 'bg-white text-blue-900'
@@ -426,12 +576,36 @@ const AuthPage: React.FC = () => {
               </div>
             )}
 
+            {/* Success Display */}
+            {success && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-green-600 text-sm">{success}</p>
+              </div>
+            )}
+
+            {/* Error Display */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            )}
+
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full py-3 bg-gradient-to-r from-blue-900 to-emerald-600 text-white rounded-lg hover:from-blue-800 hover:to-emerald-500 transition-all duration-200 font-medium"
+              disabled={loading}
+              className={`w-full py-3 bg-gradient-to-r from-blue-900 to-emerald-600 text-white rounded-lg hover:from-blue-800 hover:to-emerald-500 transition-all duration-200 font-medium ${
+                loading ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
-              {activeTab === 'login' ? 'Sign In' : activeTab === 'signup' ? 'Create Account' : 'Register as Lawyer'}
+              {loading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Processing...</span>
+                </div>
+              ) : (
+                activeTab === 'login' ? 'Sign In' : activeTab === 'signup' ? 'Create Account' : 'Register as Lawyer'
+              )}
             </button>
           </form>
         </div>
