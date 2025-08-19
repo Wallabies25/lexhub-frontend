@@ -2,43 +2,14 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, MessageCircle, Users, BookOpen, ArrowRight, Shield, Globe, Award } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useUser } from '../contexts/UserContext';
 import ChatbotWidget from '../components/ChatbotWidget';
 
 const Homepage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const { t } = useLanguage();
-
-  const features = [
-    {
-      icon: MessageCircle,
-      title: 'AI Legal Assistant',
-      description: 'Get instant answers to your IP law questions with our intelligent chatbot',
-      link: '/chatbot',
-      color: 'bg-blue-100 text-blue-600',
-    },
-    {
-      icon: BookOpen,
-      title: 'Statute Database',
-      description: 'Search comprehensive IP laws, regulations, and legal precedents',
-      link: '/statutes',
-      color: 'bg-emerald-100 text-emerald-600',
-    },
-    {
-      icon: Users,
-      title: 'Expert Consultation',
-      description: 'Connect with verified IP lawyers for professional legal advice',
-      link: '/consultation',
-      color: 'bg-purple-100 text-purple-600',
-    },
-  ];
-
-  const stats = [
-    { number: '500+', label: 'Legal Documents' },
-    { number: '50+', label: 'Verified Lawyers' },
-    { number: '1000+', label: 'Users Helped' },
-    { number: '24/7', label: 'AI Support' },
-  ];
+  const { isLoggedIn } = useUser();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,7 +73,7 @@ const Homepage: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                to="/chatbot"
+                to="/auth"
                 className="inline-flex items-center px-8 py-4 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-semibold text-lg"
               >
                 {t('hero.cta')}
@@ -119,123 +90,56 @@ const Homepage: React.FC = () => {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-blue-900 mb-2">
-                  {stat.number}
+      {/* Only show the rest of the homepage if not logged in */}
+      {!isLoggedIn && (
+        <>
+          {/* Stats Section */}
+          <section className="py-16 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div className="text-center">
+                  <div className="text-3xl md:text-4xl font-bold text-blue-900 mb-2">
+                    500+
+                  </div>
+                  <div className="text-gray-600 font-medium">Legal Documents</div>
                 </div>
-                <div className="text-gray-600 font-medium">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Comprehensive IP Law Platform
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Everything you need to understand, research, and navigate intellectual property law in Sri Lanka
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <Link
-                  key={index}
-                  to={feature.link}
-                  className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 group"
-                >
-                  <div className={`w-16 h-16 ${feature.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                    <Icon className="h-8 w-8" />
+                <div className="text-center">
+                  <div className="text-3xl md:text-4xl font-bold text-blue-900 mb-2">
+                    50+
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">{feature.title}</h3>
-                  <p className="text-gray-600 mb-6">{feature.description}</p>
-                  <div className="flex items-center text-blue-600 font-semibold group-hover:text-emerald-600 transition-colors">
-                    Learn More
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  <div className="text-gray-600 font-medium">Verified Lawyers</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl md:text-4xl font-bold text-blue-900 mb-2">
+                    1000+
                   </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust Section */}
-      <section className="py-20 bg-blue-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Trusted by Legal Professionals
-            </h2>
-            <p className="text-xl text-blue-100 max-w-3xl mx-auto">
-              Built in collaboration with Sri Lankan legal experts and institutions
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="h-8 w-8 text-white" />
+                  <div className="text-gray-600 font-medium">Users Helped</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl md:text-4xl font-bold text-blue-900 mb-2">
+                    24/7
+                  </div>
+                  <div className="text-gray-600 font-medium">AI Support</div>
+                </div>
               </div>
-              <h3 className="text-xl font-bold mb-2">Verified Content</h3>
-              <p className="text-blue-100">All legal information verified by qualified IP lawyers</p>
             </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Globe className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">Multilingual Support</h3>
-              <p className="text-blue-100">Available in English, Sinhala, and Tamil</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Award className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">Expert Network</h3>
-              <p className="text-blue-100">Connected with top IP law practitioners in Sri Lanka</p>
-            </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-emerald-500 to-blue-600 text-white">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Ready to Navigate IP Law with Confidence?
-          </h2>
-          <p className="text-xl mb-8 text-emerald-100">
-            Join thousands of users who trust LexHub IP for their legal research and consultation needs
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/auth"
-              className="inline-flex items-center px-8 py-4 bg-white text-blue-900 rounded-xl hover:bg-gray-100 transition-colors font-semibold text-lg"
-            >
-              Get Started Free
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-            <Link
-              to="/about"
-              className="inline-flex items-center px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl hover:bg-white hover:text-blue-900 transition-colors font-semibold text-lg"
-            >
-              Learn More
-            </Link>
-          </div>
-        </div>
-      </section>
+          {/* Features Section */}
+          <section className="py-20 bg-gray-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-16">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                  Comprehensive IP Law Platform
+                </h2>
+                <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                  Everything you need to understand, research, and navigate intellectual property law in Sri Lanka
+                </p>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
 
       {/* Floating Chatbot Widget */}
       <ChatbotWidget />
