@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { Scale, Target, Mail, Phone, MapPin, Send, Award, Globe, Shield } from 'lucide-react';
+import { Scale, Users, Target, Handshake, Mail, Phone, MapPin, Send, Award, Globe, Shield } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
+import sandaruImg from "../assets/photos/Sandaru1.jpg";
+import yashodaImg from "../assets/photos/Yashoda2.jpg";
+import kiyaraImg from "../assets/photos/Kiyara1.jpg";
+import sinethImg from "../assets/photos/Sineth1.jpg";
+
 
 const AboutPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -8,6 +14,7 @@ const AboutPage: React.FC = () => {
     subject: '',
     message: '',
   });
+  const { t } = useLanguage();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -27,22 +34,28 @@ const AboutPage: React.FC = () => {
 
   const teamMembers = [
     {
-      name: 'Dr. Samantha Perera',
+      name: 'Dr. Yashoda de Silva',
       role: 'Founder & Chief Legal Officer',
-      image: 'https://images.pexels.com/photos/3760263/pexels-photo-3760263.jpeg?auto=compress&cs=tinysrgb&w=300',
+      image: yashodaImg,
       bio: 'Leading IP attorney with 20+ years experience in Sri Lankan intellectual property law.',
     },
     {
-      name: 'Rohan Silva',
+      name: 'Rev.Sandaru Sathsara',
       role: 'Technology Director',
-      image: 'https://images.pexels.com/photos/3777946/pexels-photo-3777946.jpeg?auto=compress&cs=tinysrgb&w=300',
+      image: sandaruImg,
       bio: 'Expert in legal technology and AI systems, former software engineer turned legal tech innovator.',
     },
     {
-      name: 'Nayomi Fernando',
+      name: 'Sis.Kiyara Amarathunga',
       role: 'Community Manager',
-      image: 'https://images.pexels.com/photos/3760067/pexels-photo-3760067.jpeg?auto=compress&cs=tinysrgb&w=300',
+      image: kiyaraImg,
       bio: 'Passionate about legal education and community building, connecting legal professionals across Sri Lanka.',
+    },
+    {
+      name: 'Dr.Sineth Nimhan',
+      role: 'Marketing Manager',
+      image: sinethImg,
+      bio: 'Dedicated to advancing legal education and fostering a strong network of legal professionals throughout Sri Lanka..',
     },
   ];
 
@@ -147,7 +160,7 @@ const AboutPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-4 gap-8">
             {teamMembers.map((member, index) => (
               <div key={index} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center hover:shadow-md transition-shadow">
                 <img
