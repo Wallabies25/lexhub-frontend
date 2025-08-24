@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import { Scale, Users, Target, Handshake, Mail, Phone, MapPin, Send, Award, Globe, Shield } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import sandaruImg from "../assets/photos/Sandaru1.jpg";
-import yashodaImg from "../assets/photos/Yashoda2.jpg";
-import kiyaraImg from "../assets/photos/Kiyara1.jpg";
-import sinethImg from "../assets/photos/Sineth1.jpg";
+
 
 
 const AboutPage: React.FC = () => {
@@ -36,25 +33,25 @@ const AboutPage: React.FC = () => {
     {
       name: 'Dr. Yashoda de Silva',
       role: 'Founder & Chief Legal Officer',
-      image: yashodaImg,
+      image: '/assets/photos/Yashoda2.jpg',
       bio: 'Leading IP attorney with 20+ years experience in Sri Lankan intellectual property law.',
     },
     {
       name: 'Rev.Sandaru Sathsara',
       role: 'Technology Director',
-      image: sandaruImg,
+      image: '/assets/photos/Sandaru1.jpg',
       bio: 'Expert in legal technology and AI systems, former software engineer turned legal tech innovator.',
     },
     {
       name: 'Sis.Kiyara Amarathunga',
       role: 'Community Manager',
-      image: kiyaraImg,
+      image: '/assets/photos/Kiyara1.jpg',
       bio: 'Passionate about legal education and community building, connecting legal professionals across Sri Lanka.',
     },
     {
       name: 'Dr.Sineth Nimhan',
       role: 'Marketing Manager',
-      image: sinethImg,
+      image: '/assets/photos/Sineth1.jpg',
       bio: 'Dedicated to advancing legal education and fostering a strong network of legal professionals throughout Sri Lanka..',
     },
   ];
