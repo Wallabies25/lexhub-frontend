@@ -139,6 +139,24 @@ const BlogsPage: React.FC = () => {
   const [expandedBlog, setExpandedBlog] = React.useState<number | null>(null);
   const [selectedTag, setSelectedTag] = React.useState<string>('All');
   const [search, setSearch] = React.useState('');
+  const [showNewBlogForm, setShowNewBlogForm] = React.useState(false);
+  const [newBlog, setNewBlog] = React.useState({
+    title: '',
+    tag: allTags[0] || '',
+    content: '',
+  });
+
+  const handleNewBlogChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewBlog(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleNewBlogPost = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: Add blog post logic here
+    setShowNewBlogForm(false);
+    setNewBlog({ title: '', tag: allTags[0] || '', content: '' });
+  };
 
   const filteredBlogs = dummyBlogs.filter(blog => {
     const matchesTag = selectedTag === 'All' || blog.tags.includes(selectedTag);
@@ -152,11 +170,72 @@ const BlogsPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
-      <h2 className="text-3xl font-bold text-blue-900 mb-2 flex items-center gap-2">
-        <Briefcase className="h-7 w-7 text-emerald-500" />
-        Lawyer Blogs
-      </h2>
-      <p className="text-gray-600 mb-8">Insights, stories, and experiences from Sri Lanka’s legal professionals.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div>
+          <h2 className="text-3xl font-bold text-blue-900 mb-2 flex items-center gap-2">
+            <Briefcase className="h-7 w-7 text-emerald-500" />
+            Lawyer Blogs
+          </h2>
+          <p className="text-gray-600 mb-0">Insights, stories, and experiences from Sri Lanka’s legal professionals.</p>
+        </div>
+        <button
+          onClick={() => setShowNewBlogForm(true)}
+          className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-900 to-emerald-600 text-white rounded-lg hover:from-blue-800 hover:to-emerald-500 transition-all duration-200"
+        >
+          <span>+ New Blog</span>
+        </button>
+      </div>
+      {showNewBlogForm && (
+        <form onSubmit={handleNewBlogPost} className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-8">
+          <h3 className="text-xl font-bold text-gray-900 mb-6">Create New Blog</h3>
+          <div className="mb-4">
+            <input
+              type="text"
+              name="title"
+              value={newBlog.title}
+              onChange={handleNewBlogChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-2 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
+              placeholder="Blog title..."
+              required
+            />
+            <select
+              name="tag"
+              value={newBlog.tag}
+              onChange={handleNewBlogChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-2 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
+              required
+            >
+              {allTags.map(tag => (
+                <option key={tag} value={tag}>{tag}</option>
+              ))}
+            </select>
+            <textarea
+              name="content"
+              value={newBlog.content}
+              onChange={handleNewBlogChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-2 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
+              placeholder="Write your blog content..."
+              rows={5}
+              required
+            />
+          </div>
+          <div className="flex gap-4">
+            <button
+              type="submit"
+              className="px-6 py-2 bg-blue-900 text-white rounded-lg font-semibold hover:bg-emerald-600 transition-colors"
+            >
+              Post
+            </button>
+            <button
+              type="button"
+              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              onClick={() => setShowNewBlogForm(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
       {/* Filter and Search Bar */}
       <div className="flex flex-col md:flex-row md:items-center gap-4 mb-8">
         <div className="flex items-center gap-2">
