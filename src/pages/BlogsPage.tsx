@@ -167,9 +167,8 @@ const BlogsPage: React.FC = () => {
       (blog.content && blog.content.toLowerCase().includes(search.toLowerCase()));
     return matchesTag && matchesSearch;
   });
-
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4">
+    <div className="w-full py-10 px-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
           <h2 className="text-3xl font-bold text-blue-900 mb-2 flex items-center gap-2">

@@ -1,6 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, MessageCircle, User, Bot, Lightbulb, BookOpen, FileText, Award, CheckCircle, Copy, Trash } from 'lucide-react';
+import { Send, MessageCircle, User, Bot, Lightbulb, BookOpen, FileText, Award, CheckCircle, Copy, Trash, Mic, MicOff } from 'lucide-react';
 import '../components/chatbot.css';
+import '../components/voice-chat.css';
+
+// Add SpeechRecognition type definitions
+declare global {
+  interface Window {
+    webkitSpeechRecognition: any;
+    SpeechRecognition: any;
+  }
+}
 
 interface Message {
   id: string;
@@ -23,12 +32,11 @@ interface ConversationContext {
   lastQueryTimestamp?: number;
 }
 
-const ChatbotPage: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>([
+const ChatbotPage: React.FC = () => {  const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       type: 'bot',
-      content: "Hello! I'm your AI Legal Assistant specializing in IP law. I can help you understand trademarks, copyrights, patents, and industrial designs. What would you like to know today?",
+      content: "Hello! I'm your AI Legal Assistant specializing in IP law. I can help you understand trademarks, copyrights, patents, and industrial designs under both international and Sri Lankan law. What would you like to know today?",
       timestamp: new Date(),
     },
   ]);
@@ -123,6 +131,8 @@ const ChatbotPage: React.FC = () => {
     });
   };
     // Function to analyze conversation and update context
+  // UTILITY FUNCTIONS - Currently not used directly but kept for reference and future use
+  // This function analyzes conversation and updates context
   const updateConversationContext = (userMessage: string): ConversationContext => {
     const lowerMessage = userMessage.toLowerCase();
     const newContext = { ...conversationContext };
@@ -159,6 +169,40 @@ const ChatbotPage: React.FC = () => {
       { pattern: /\b(china)\b/i, value: 'China' },
       { pattern: /\b(india)\b/i, value: 'India' }
     ];
+    
+    // Enhanced topic detection to identify non-technical legal questions
+    // This helps recognize when users don't know the proper legal terminology
+    const enhancedTopicPatterns = [
+      // Database and unauthorized access patterns
+      { pattern: /\b(database|data|information|files)\b.*?\b(access|entry|enter|use|using|used|get|got|accessed)\b.*?\b(without|no|not)\b.*?\b(permission|consent|authorization|approve|approval|allowed)\b/i, topic: 'unauthorized_access' },
+      { pattern: /\b(access|entered|entry|get|got|took|using|used|took)\b.*?\b(database|data|information|files)\b.*?\b(without|no|not)\b.*?\b(permission|consent|authorization|approve|approval|allowed)\b/i, topic: 'unauthorized_access' },
+      { pattern: /\b(steal|stole|stolen|took|taking)\b.*?\b(data|information|database|content|files)\b/i, topic: 'unauthorized_access' },
+      { pattern: /\b(hack|hacked|hacking|breach|breached)\b/i, topic: 'unauthorized_access' },
+      
+      // General IP infringement with non-technical language
+      { pattern: /\b(someone|they|people|person)\b.*?\b(use|using|used|copy|copied|copying|stole|steal|stealing|took|taking)\b.*?\b(my|our|mine|company|business)\b.*?\b(idea|work|content|creation|product|design)\b/i, topic: 'infringement' },
+      { pattern: /\b(protect|protection|protecting)\b.*?\b(my|our|mine)\b.*?\b(idea|work|business|company|product|invention|design|content|creation)\b/i, topic: 'ip_protection' },
+      
+      // Simple trademark questions without using "trademark" term
+      { pattern: /\b(name|logo|brand|slogan)\b.*?\b(protect|copy|copied|copying|use|using|steal|stole|stolen)\b/i, topic: 'trademark' },
+      { pattern: /\b(company|business|product)\b.*?\b(name|brand)\b.*?\b(same|similar|copied|copy|copying|use|using|used)\b/i, topic: 'trademark' },
+      
+      // Copyright questions without using "copyright" term
+      { pattern: /\b(book|music|song|video|photo|picture|image|art|artwork|movie|film|content|software|code|article|writing)\b.*?\b(copy|copied|copying|use|used|using|steal|stole|stolen)\b/i, topic: 'copyright' },
+      { pattern: /\b(create|created|wrote|written|made|recorded|produced|drew|painted|designed|developed|coded)\b.*?\b(copied|copy|copying|stole|stolen|using|used)\b/i, topic: 'copyright' },
+      
+      // Patent-related without using "patent" term
+      { pattern: /\b(invent|invented|invention|innovation|created|device|machine|process|method|technology)\b.*?\b(protect|copy|copied|copying|stole|stolen|use|used|using)\b/i, topic: 'patent' },
+    ];
+    
+    // Check for enhanced topic patterns
+    for (const pattern of enhancedTopicPatterns) {
+      if (pattern.pattern.test(lowerMessage)) {
+        newContext.lastTopic = newContext.topic;
+        newContext.topic = pattern.topic;
+        break;
+      }
+    }
     
     for (const jp of jurisdictionPatterns) {
       if (jp.pattern.test(lowerMessage)) {
@@ -372,12 +416,157 @@ const ChatbotPage: React.FC = () => {
     }
     
     return preferences;
+  }  
+    // UTILITY FUNCTIONS - Currently not used directly but kept for reference and future use
+  // This function detects if a user's question is unclear and needs clarification
+  const detectUnclearQuestion = (message: string): boolean => {
+    const lowerMessage = message.toLowerCase();
+    
+    // Check if the message is too short or vague
+    if (message.length < 12 || message.split(' ').length < 3) {
+      return true;
+    }
+    
+    // Check for vague terms without specific context
+    const vaguePatterns = [
+      /^(what|how|can|is|are|do|does).{0,10}(law|legal|ip|laws)/i,
+      /^(help|need help|question|advice).{0,15}(law|legal|ip|data)/i,
+      /\b(ip law|intellectual property)\b.*?\b(question|help|advice)\b/i,
+      /^(hello|hi|hey).{0,15}(question|help|advice|information)/i,
+      /\b(explain|tell me about|what is).{0,5}$/i,
+    ];
+    
+    for (const pattern of vaguePatterns) {
+      if (pattern.test(lowerMessage)) {
+        return true;
+      }
+    }
+    
+    // Check if message contains IP-related terms but lacks specific action or question
+    const hasIpTerms = /\b(trademark|copyright|patent|intellectual property|ip|data protection)\b/i.test(lowerMessage);
+    const hasQuestion = /\b(how|what|when|where|why|who|can|could|should|would|is|are|do|does)\b.*\?/i.test(lowerMessage) || message.includes('?');
+    
+    if (hasIpTerms && !hasQuestion) {
+      return true;
+    }
+    
+    return false;
   };
-
+  // UTILITY FUNCTIONS - Currently not used directly but kept for reference and future use
+  // This function provides guidance for unclear questions
+  const generateClarificationResponse = (message: string): string => {
+    const lowerMessage = message.toLowerCase();
+    
+    // Check for IP topic hints in the unclear question
+    if (/\b(trademark|brand|logo|name)\b/i.test(lowerMessage)) {
+      return "I'd like to help with your trademark question. To provide the most accurate information, could you clarify what specific aspect of trademarks you're interested in?\n\n• Are you looking to register a trademark?\n• Do you have questions about trademark infringement?\n• Are you wondering if something can be trademarked?\n• Do you need information about international trademark protection?\n\nProviding a bit more detail will help me give you the most relevant information.";
+    } 
+    else if (/\b(copyright|book|music|art|creative|author|artist)\b/i.test(lowerMessage)) {
+      return "I'd like to help with your copyright question. To provide the most useful information, could you tell me more about:\n\n• The type of creative work involved (book, music, art, software, etc.)\n• Whether you're the creator or using someone else's work\n• The specific copyright issue you're facing (protection, infringement, fair use, etc.)\n\nWith a bit more context, I can provide more targeted guidance.";
+    }
+    else if (/\b(data|database|information|access|computer|system)\b/i.test(lowerMessage)) {
+      return "I see you're asking about data or database-related legal issues. To help you better, could you tell me:\n\n• Are you concerned about protecting data from unauthorized access?\n• Has there been a data breach or unauthorized access incident?\n• Are you looking for information on legal requirements for data protection?\n• Are you seeking remedies for unauthorized data use?\n\nWith more specific information, I can provide more accurate guidance.";
+    }
+    else {
+      return "I'd like to help with your intellectual property question. To provide the most helpful guidance, could you share a bit more about:\n\n• The specific type of intellectual property involved (trademark, copyright, patent, trade secret, etc.)\n• The specific issue you're facing (registration, protection, infringement, licensing, etc.)\n• Whether this is for personal use, a business, or academic purposes\n\nWith this additional context, I'll be able to provide more targeted information.";
+    }
+  };  // Function to simulate chatbot response
   const simulateBotResponse = (userMessage: string): string => {
     const lowerMessage = userMessage.toLowerCase();
-    const newContext = updateConversationContext(userMessage);
-    setConversationContext(newContext);
+    
+    // Check if the question is unclear and needs clarification
+    const isUnclearQuestion = lowerMessage.length < 12 || lowerMessage.split(' ').length < 3 ||
+      /^(what|how|can|is|are|do|does).{0,10}(law|legal|ip|laws)/i.test(lowerMessage) ||
+      /^(help|need help|question|advice).{0,15}(law|legal|ip|data)/i.test(lowerMessage);
+    
+    if (isUnclearQuestion) {
+      // Return a simple clarification request
+      return "I'd like to help with your question. Could you provide a bit more detail or context so I can give you the most relevant information?";
+    }
+    
+    // Check for Sri Lanka specific IP law questions
+    const isSriLankaQuery = lowerMessage.includes('sri lanka') || 
+                          lowerMessage.includes('sri lankan') || 
+                          lowerMessage.includes('lanka') || 
+                          lowerMessage.includes('srilanka') || 
+                          lowerMessage.includes('lankan');
+                          
+    if (isSriLankaQuery) {
+      if (lowerMessage.includes('ip act') || lowerMessage.includes('intellectual property act') || 
+          (lowerMessage.includes('act') && lowerMessage.includes('36') && lowerMessage.includes('2003'))) {
+        return "Sri Lanka's Intellectual Property Act, No. 36 of 2003 is the primary legislation governing intellectual property in Sri Lanka. This comprehensive law covers:\n\n• Trademarks (Part IV)\n• Industrial Designs (Part III)\n• Patents (Part II)\n• Copyrights (Part I)\n• Unfair competition and undisclosed information\n\nThe Act established the National Intellectual Property Office (NIPO) of Sri Lanka, which administers IP registrations. The Act is compliant with the WTO's TRIPS Agreement (Trade-Related Aspects of Intellectual Property Rights).\n\nWould you like specific information about any particular aspect of this Act?";
+      }
+      
+      if (lowerMessage.includes('trademark') || lowerMessage.includes('trade mark') || lowerMessage.includes('brand')) {
+        if (lowerMessage.includes('register') || lowerMessage.includes('registration') || lowerMessage.includes('apply')) {
+          return "To register a trademark in Sri Lanka under the Intellectual Property Act, No. 36 of 2003:\n\n1. **Application**: Submit to the National Intellectual Property Office (NIPO) with:\n   • Representation of the mark\n   • List of goods/services with appropriate classes\n   • Applicant details\n   • Power of attorney (if filed through an agent)\n   • Priority documents (if claiming priority)\n\n2. **Fees**: Pay the required application fee (varies by number of classes)\n\n3. **Examination**: The Registrar examines for compliance and distinctiveness\n\n4. **Publication**: If accepted, the mark is published in the Gazette\n\n5. **Opposition Period**: 3 months where third parties may oppose\n\n6. **Registration**: If no opposition or opposition resolved, the mark is registered\n\nThe initial term is 10 years from filing date, renewable for successive 10-year periods. For specific assistance, you may contact the NIPO or a qualified IP attorney in Sri Lanka.";
+        } else if (lowerMessage.includes('duration') || lowerMessage.includes('how long') || lowerMessage.includes('validity')) {
+          return "Under Sri Lanka's Intellectual Property Act, No. 36 of 2003:\n\n• Trademark registration is valid for **10 years** from the date of filing\n• Registration can be **renewed indefinitely** for successive periods of 10 years\n• A renewal application must be filed within 12 months before expiration\n• A 6-month grace period after expiration is available with payment of surcharge\n• If not renewed, the trademark will be removed from the register\n\nRegistered trademark owners must use the mark in Sri Lanka to maintain protection, as non-use for an uninterrupted period of 5 years can make the mark vulnerable to cancellation upon request by interested parties.";
+        } else if (lowerMessage.includes('infringement') || lowerMessage.includes('unauthorized')) {
+          return "Under Sri Lanka's Intellectual Property Act, No. 36 of 2003, trademark infringement occurs when someone without authorization:\n\n• Uses an identical or similar mark for identical or similar goods/services, creating a likelihood of confusion\n• Uses a well-known mark that would indicate a connection with the owner or likely damage their interests\n\nRemedies for trademark infringement in Sri Lanka include:\n• Injunctions (temporary or permanent)\n• Damages or account of profits\n• Seizure, forfeiture, or destruction of infringing goods\n• Criminal penalties for willful trademark counterfeiting (fines up to Rs. 500,000 and/or imprisonment up to 6 months)\n\nInfringement actions can be filed in the Commercial High Court of Colombo. The time limit for filing civil actions is typically 5 years from the act of infringement.";
+        } else {
+          return "Trademark protection in Sri Lanka is governed by the Intellectual Property Act, No. 36 of 2003:\n\n• **Definition**: A trademark can be any sign that distinguishes goods or services of one enterprise from those of others\n• **Requirements**: Must be distinctive and not identical/similar to existing marks\n• **Registration**: Not mandatory but provides stronger protection\n• **Rights**: Exclusive right to use the mark and prevent unauthorized use by others\n• **Term**: 10 years, renewable indefinitely for successive 10-year periods\n• **Use Requirement**: Marks unused for 5 consecutive years may be vulnerable to cancellation\n• **Well-Known Marks**: Special protection even if not registered in Sri Lanka\n\nThe National Intellectual Property Office (NIPO) handles trademark registrations in Sri Lanka. Would you like more specific information about trademark registration or enforcement in Sri Lanka?";
+        }
+      }
+      
+      if (lowerMessage.includes('copyright') || lowerMessage.includes('author') || lowerMessage.includes('creative work')) {
+        if (lowerMessage.includes('register') || lowerMessage.includes('registration')) {
+          return "In Sri Lanka, under the Intellectual Property Act, No. 36 of 2003, copyright protection is **automatic** upon creation of an original work. Formal registration is not required to obtain copyright protection.\n\nHowever, Sri Lanka does offer a voluntary copyright registration system through the National Intellectual Property Office (NIPO) that can help provide evidence of ownership:\n\n1. Submit an application to NIPO with:\n   • Copy of the work\n   • Details of the author/owner\n   • Date of creation/publication\n   • Proof of identity\n   • Applicable fee\n\n2. NIPO issues a certificate that can serve as prima facie evidence of ownership\n\nThis registration is particularly useful for providing evidence in case of infringement disputes, though it does not confer any additional rights beyond those automatically granted under the law.";
+        } else if (lowerMessage.includes('duration') || lowerMessage.includes('how long') || lowerMessage.includes('term')) {
+          return "Copyright duration in Sri Lanka under the Intellectual Property Act, No. 36 of 2003:\n\n• **Literary, artistic, and scientific works**: Life of the author plus 70 years\n• **Joint authorship works**: 70 years from the death of the last surviving author\n• **Anonymous/pseudonymous works**: 70 years from the date of publication\n• **Audiovisual works**: 70 years from the date of making available to the public or 70 years from creation if not made available\n• **Applied art**: 25 years from the date of creation\n• **Photographic works**: 50 years from creation\n• **Computer programs**: Life of the author plus 70 years\n• **Performances**: 50 years from the performance\n• **Sound recordings**: 50 years from fixation\n• **Broadcasts**: 50 years from the broadcast\n\nThese terms are calculated from the beginning of the year following the death, publication, or creation as applicable.";
+        } else if (lowerMessage.includes('fair') || lowerMessage.includes('exception')) {
+          return "Sri Lanka's Intellectual Property Act, No. 36 of 2003 provides certain exceptions to copyright protection, similar to fair use/fair dealing doctrines. These include:\n\n• **Private reproduction**: Limited personal or private use\n• **Quotations**: Short quotations compatible with fair practice\n• **Teaching**: Reproduction for teaching purposes\n• **News reporting**: Reproduction for current events reporting\n• **Reproduction for judicial proceedings**\n• **Reproduction for libraries and archives** under specific conditions\n• **Public speeches and lectures**: Limited reproduction for informatory purposes\n• **Ephemeral recordings** by broadcasting organizations\n• **Public display** of works permanently in public places\n\nThese exceptions are subject to the condition that they don't conflict with normal exploitation of the work and don't unreasonably prejudice the legitimate interests of the rights holder. For specific scenarios, consulting with a Sri Lankan IP attorney is recommended.";
+        } else {
+          return "Copyright in Sri Lanka is governed by the Intellectual Property Act, No. 36 of 2003:\n\n• **Protected Works**: Literary, artistic, musical, audiovisual works, computer programs, databases, and derivative works\n• **Rights Granted**: Economic rights (reproduction, distribution, public display, etc.) and moral rights (attribution and integrity)\n• **Acquisition**: Automatic upon creation; no registration required (though voluntary registration is available)\n• **Duration**: Generally author's life plus 70 years (varies by work type)\n• **Ownership**: Generally belongs to the author, except in employment situations where it may belong to the employer\n• **Infringement Remedies**: Civil (injunctions, damages) and criminal penalties\n\nThe Act also provides protection for related rights including performances, phonograms, and broadcasts. Would you like more specific information about any aspect of copyright protection in Sri Lanka?";
+        }
+      }
+      
+      if (lowerMessage.includes('patent') || lowerMessage.includes('invention')) {
+        if (lowerMessage.includes('application') || lowerMessage.includes('register') || lowerMessage.includes('file')) {
+          return "To patent an invention in Sri Lanka under the Intellectual Property Act, No. 36 of 2003:\n\n1. **Prepare Application**:\n   • Complete specification with claims\n   • Drawings (if necessary)\n   • Abstract\n   • Applicant and inventor details\n\n2. **File with NIPO** (National Intellectual Property Office) with prescribed fees\n\n3. **Examination Process**:\n   • Formality examination\n   • Publication in the Gazette (after 18 months from filing)\n   • Substantive examination (upon request within 3 years of filing)\n\n4. **Grant and Publication**: If approved, patent is granted and published\n\nForeign applicants must appoint a local agent. Sri Lanka recognizes Paris Convention priority (12 months). The application and all documents must be in English, Sinhala, or Tamil.\n\nPatent fees include filing fees, examination fees, and annual maintenance fees that increase over the patent term.";
+        } else if (lowerMessage.includes('duration') || lowerMessage.includes('term') || lowerMessage.includes('how long')) {
+          return "Patent duration in Sri Lanka under the Intellectual Property Act, No. 36 of 2003:\n\n• Patents are granted for a period of **20 years** from the filing date\n• No extensions are available, even for pharmaceutical patents\n• Maintenance requires payment of annual fees, starting from the second year\n• Failure to pay annual fees will result in the patent lapsing\n• A grace period of 6 months is available for late payment with a surcharge\n• After expiration, the invention enters the public domain\n\nThe effective term may be shorter if the patent is invalidated through legal proceedings or if the patent holder surrenders the patent rights.";
+        } else if (lowerMessage.includes('requirement') || lowerMessage.includes('criteria')) {
+          return "For an invention to be patentable in Sri Lanka under the Intellectual Property Act, No. 36 of 2003, it must meet these requirements:\n\n1. **Novelty**: The invention must be new and not part of the prior art worldwide\n\n2. **Inventive Step**: The invention must not be obvious to a person skilled in the relevant field\n\n3. **Industrial Applicability**: The invention must be capable of being made or used in some kind of industry\n\n4. **Patentable Subject Matter**: The invention must not fall under excluded categories such as:\n   • Discoveries, scientific theories, and mathematical methods\n   • Plants, animals, and biological processes\n   • Methods of treatment for humans or animals\n   • Diagnostic, therapeutic, and surgical methods\n   • Inventions contrary to public order or morality\n\nThe application must also sufficiently disclose the invention to enable a person skilled in the art to carry it out.";
+        } else {
+          return "Patent protection in Sri Lanka is governed by the Intellectual Property Act, No. 36 of 2003:\n\n• **Definition**: A patent protects new inventions involving an inventive step and capable of industrial application\n• **Requirements**: Novelty, inventive step, and industrial applicability\n• **Term**: 20 years from filing date (non-renewable)\n• **Rights**: Exclusive right to make, use, sell, and import the patented invention\n• **Application Process**: Filing with the National Intellectual Property Office (NIPO)\n• **Enforcement**: Through Commercial High Court of Colombo\n• **Annual Fees**: Required to maintain the patent in force\n\nSri Lanka is a member of the Paris Convention, allowing priority claims based on foreign applications filed within the previous 12 months. However, Sri Lanka is not a member of the Patent Cooperation Treaty (PCT), so direct national filing is required.\n\nWould you like specific information about patent application procedures or enforcement in Sri Lanka?";
+        }
+      }
+      
+      if (lowerMessage.includes('industrial design') || lowerMessage.includes('design patent')) {
+        if (lowerMessage.includes('register') || lowerMessage.includes('application') || lowerMessage.includes('file')) {
+          return "To register an industrial design in Sri Lanka under the Intellectual Property Act, No. 36 of 2003:\n\n1. **Prepare Application**:\n   • Graphic representation or photographs of the design\n   • Indication of the article incorporating the design\n   • Applicant details\n   • Power of attorney (if filed through an agent)\n   • Priority documents (if claiming priority)\n\n2. **File with NIPO** (National Intellectual Property Office) with prescribed fees\n\n3. **Examination Process**:\n   • Formality examination\n   • Substantive examination (novelty and originality)\n\n4. **Registration and Publication**: If approved, the design is registered and published in the Gazette\n\nForeign applicants must appoint a local agent. Sri Lanka recognizes Paris Convention priority (6 months). Multiple designs for the same class can be included in one application.";
+        } else if (lowerMessage.includes('duration') || lowerMessage.includes('term') || lowerMessage.includes('how long')) {
+          return "Industrial design protection in Sri Lanka under the Intellectual Property Act, No. 36 of 2003:\n\n• Initial term of protection is **5 years** from the filing date\n• Renewable for **two consecutive periods of 5 years** each\n• Maximum total protection period of **15 years**\n• Renewal application must be filed within 6 months before expiration\n• Grace period of 6 months after expiration is available with payment of surcharge\n\nAfter the maximum protection period expires, the design enters the public domain and can be freely used by anyone.";
+        } else {
+          return "Industrial design protection in Sri Lanka is governed by the Intellectual Property Act, No. 36 of 2003:\n\n• **Definition**: Protects the ornamental or aesthetic aspect of an article, comprising 3D features (shape) or 2D features (patterns, lines, colors)\n• **Requirements**: Must be new or original and not dictated solely by technical function\n• **Registration**: Required for protection, filed with the National Intellectual Property Office (NIPO)\n• **Term**: 5 years, renewable for two additional 5-year periods (maximum 15 years total)\n• **Rights**: Exclusive right to make, sell, import articles bearing the design\n• **Exclusions**: Designs contrary to public order or morality are not registrable\n\nThe owner of a registered design can take legal action against unauthorized use, including seeking injunctions, damages, and destruction of infringing articles.\n\nWould you like specific information about the industrial design registration process or enforcement in Sri Lanka?";
+        }
+      }
+      
+      if (lowerMessage.includes('nipo') || lowerMessage.includes('national intellectual property office')) {
+        return "The National Intellectual Property Office (NIPO) of Sri Lanka is the government agency responsible for administering intellectual property rights in the country. Established under the Intellectual Property Act, No. 36 of 2003, NIPO's functions include:\n\n• Registration of trademarks, patents, and industrial designs\n• Maintaining IP registers and databases\n• Providing information to the public on IP matters\n• Promoting awareness and understanding of IP rights\n• Implementing international IP treaties and agreements\n\nContact Information:\nNational Intellectual Property Office of Sri Lanka\nSamagam Medura,\nD.R. Wijewardena Mawatha,\nColombo 10, Sri Lanka\nTelephone: +94 11 2689368\nFax: +94 11 2689367\nEmail: nipo@sltnet.lk\nWebsite: www.nipo.gov.lk\n\nNIPO operates under the Ministry of Industry and Commerce and plays a vital role in Sri Lanka's intellectual property ecosystem.";
+      }    }
+    
+    // Handle database access, data protection and unauthorized access questions
+    if (lowerMessage.includes('database') || 
+        (lowerMessage.includes('access') && lowerMessage.includes('without permission')) || 
+        (lowerMessage.includes('entry') && lowerMessage.includes('without permission')) ||
+        lowerMessage.includes('unauthorized access') ||
+        lowerMessage.includes('data breach') ||
+        (lowerMessage.includes('using') && lowerMessage.includes('data') && lowerMessage.includes('permission'))) {
+      
+      if (lowerMessage.includes('action') || lowerMessage.includes('sue') || lowerMessage.includes('legal') || lowerMessage.includes('remedy') || lowerMessage.includes('against')) {
+        return "When someone accesses a database without authorization, several legal remedies are available:\n\n1. **Computer Fraud and Abuse Act (CFAA)**: In the US, unauthorized access to computer systems is a federal offense that can lead to both criminal charges and civil liability\n\n2. **Data Protection Laws**: Regulations like GDPR (EU), CCPA (California), or various national data protection laws may provide specific remedies for unauthorized data access\n\n3. **Breach of Contract**: If the unauthorized user violated terms of service or confidentiality agreements\n\n4. **Trade Secret Laws**: If the database contains proprietary business information that qualifies as trade secrets\n\n5. **Copyright Infringement**: If the database structure or contents are protected by copyright\n\n6. **Legal Steps to Take**:\n   • Document the unauthorized access with evidence\n   • Report to law enforcement for criminal investigation\n   • Send cease and desist letters\n   • File for injunctive relief to prevent further access\n   • Pursue damages through litigation\n\nWould you like more specific information about any of these remedies or how to determine which laws apply to your situation?";
+      } else if (lowerMessage.includes('prevent') || lowerMessage.includes('protect') || lowerMessage.includes('security')) {
+        return "To protect your database from unauthorized access, consider these legal and technical measures:\n\n1. **Legal Protections**:\n   • Implement clear Terms of Service and Acceptable Use Policies\n   • Use robust data processing agreements with third parties\n   • Include confidentiality clauses in employee contracts\n   • Register database copyrights if the structure is original\n   • Maintain trade secret status by implementing reasonable security measures\n\n2. **Technical Measures**:\n   • Implement strong access controls and authentication\n   • Use encryption for sensitive data\n   • Maintain access logs and monitoring systems\n   • Regular security audits and penetration testing\n\n3. **Compliance Requirements**:\n   • Ensure compliance with relevant data protection laws (GDPR, CCPA, etc.)\n   • Implement data breach notification procedures\n   • Regular employee training on data security\n\nWould you like more specific information about legal protections for databases or technical security measures?";
+      } else {
+        return "Unauthorized access to databases is governed by several legal frameworks:\n\n1. **Computer Crime Laws**: Laws like the Computer Fraud and Abuse Act (US) criminalize unauthorized access to computer systems and data\n\n2. **Data Protection Regulations**: Laws like GDPR (EU), CCPA (California), and other regional data protection laws regulate how data should be protected and establish penalties for breaches\n\n3. **Intellectual Property Protection**:\n   • **Copyright**: Database structures and content may be protected by copyright if they show sufficient originality\n   • **Trade Secret Law**: Proprietary databases containing valuable business information may qualify for trade secret protection\n   • **Contract Law**: Terms of service, confidentiality agreements, and other contracts can provide additional legal protection\n\n4. **Potential Consequences**:\n   • Criminal penalties including fines and imprisonment\n   • Civil liability for damages\n   • Regulatory fines for inadequate security measures\n   • Reputational damage\n\nWould you like more information about specific legal remedies available when unauthorized access occurs, or about preventive measures you can take to protect your data?";
+      }
+      
+      // If we reach here, it means none of the database access conditions matched
+      // Return a default response instead of null to ensure type consistency
+      return "";
+    }
     
     // Comprehensive IP-specific responses
     if (lowerMessage.includes('trademark')) {
@@ -417,35 +606,47 @@ const ChatbotPage: React.FC = () => {
     } else if (lowerMessage.includes('difference between') && (lowerMessage.includes('trademark') || lowerMessage.includes('copyright') || lowerMessage.includes('patent'))) {
       return "Here are the key differences between major IP types:\n\n**Trademarks**\n• Protect: Brand identifiers (names, logos, slogans)\n• Purpose: Indicate source of goods/services and prevent consumer confusion\n• Duration: Indefinite with proper use and renewal\n• Examples: Nike swoosh, Coca-Cola name\n\n**Copyrights**\n• Protect: Creative works (art, music, literature, software)\n• Purpose: Encourage creation by giving creators control over their works\n• Duration: Author's life + 70 years (typically)\n• Examples: Books, songs, paintings, photographs\n\n**Patents**\n• Protect: Inventions and functional improvements\n• Purpose: Encourage innovation through temporary monopolies\n• Duration: 20 years from filing (utility patents)\n• Examples: New machines, processes, compositions\n\n**Trade Secrets**\n• Protect: Confidential business information\n• Purpose: Maintain competitive advantage\n• Duration: Indefinite as long as secrecy maintained\n• Examples: Formulas, customer lists, manufacturing techniques\n\nWhich specific comparison would you like me to elaborate on?";
     } else if (lowerMessage.includes('thank')) {
-      return "You're welcome! I'm happy to help with any other IP law questions you might have. Feel free to ask about trademark registration, copyright protection, patent applications, or any other intellectual property matters whenever you need assistance.";
-    } else if (lowerMessage.includes('hello') || lowerMessage.includes('hi ')) {
-      return "Hello! I'm here to help with your intellectual property law questions. I can provide information about trademarks, copyrights, patents, industrial designs, and IP enforcement strategies. What specific IP issue can I assist you with today?";
+      return "You're welcome! I'm happy to help with any other IP law questions you might have. Feel free to ask about trademark registration, copyright protection, patent applications, or any other intellectual property matters whenever you need assistance.";    } else if (lowerMessage.includes('hello') || lowerMessage.includes('hi ')) {
+      return "Hello! I'm here to help with your intellectual property law questions. I can provide information about trademarks, copyrights, patents, industrial designs, and IP enforcement strategies. What specific IP issue can I assist you with today?";    
     } else {
+      // For follow-up suggestions, create a simple object with just the needed properties
+      // instead of calling updateConversationContext which may not be available
+      const topicMatch = lowerMessage.match(/\b(trademark|copyright|patent|industrial design|infringement|unauthorized access|ip protection)\b/i);
+      const simplifiedContext = {
+        topic: topicMatch ? topicMatch[1].toLowerCase() : null,
+        followUpSuggested: false
+      };
+      
       // Check if we should provide a follow-up based on conversation context
-      if (newContext.topic && !newContext.followUpSuggested) {
-        // Mark that we've suggested a follow-up to avoid repetition
-        setConversationContext({...newContext, followUpSuggested: true});
+      if (simplifiedContext.topic && !simplifiedContext.followUpSuggested) {
+        // No need to call setConversationContext here since it might not be available
         
-        switch(newContext.topic) {
+        switch(simplifiedContext.topic) {
           case 'trademark':
-            return "Since we're discussing trademarks, would you like to know more about trademark registration, search strategies, enforcement options, or international protection through the Madrid System?";
+            return "I notice we're discussing trademarks. To provide more targeted help, I'd like to understand your specific needs. Are you interested in:\n\n• Registering a new trademark?\n• Conducting a trademark search?\n• Understanding how to protect your mark internationally?\n• Learning about trademark infringement and enforcement?\n• Understanding the difference between ™ and ® symbols?\n\nOr is there another trademark-related topic I can help with?";
           case 'copyright':
-            return "Regarding copyright, would you like information about fair use exceptions, registration benefits, DMCA takedown procedures, or how to handle unauthorized use of your work?";
+            return "I see we're discussing copyright law. To better assist you with your specific situation, could you tell me if you're interested in:\n\n• Registering a copyright for your work?\n• Understanding fair use exceptions?\n• Learning about DMCA takedown procedures for online content?\n• Determining copyright duration for specific works?\n• Understanding how to license your copyrighted work?\n• Learning about international copyright protection?\n\nThis will help me provide more relevant information for your needs.";
           case 'patent':
-            return "For patents, I can provide information about patentability requirements, the difference between provisional and non-provisional applications, Patent Cooperation Treaty (PCT) filings, or enforcement strategies. What would be most helpful?";
+            return "I understand we're discussing patents. To provide the most helpful information, could you specify which aspect you're most interested in:\n\n• Determining if your invention is patentable?\n• Understanding provisional vs. non-provisional applications?\n• Learning about international patent protection through PCT?\n• Estimating costs and timelines for the patent process?\n• Understanding how to conduct a patent search?\n• Learning about enforcing your patent rights?\n\nKnowing your specific interest will help me tailor my guidance to your situation.";
           case 'industrial_design':
-            return "For industrial designs, would you like to know more about registration procedures, protection strategies, the Hague System for international registration, or how design rights differ from utility patents?";
+            return "I see we're discussing industrial designs. To provide more targeted assistance, could you indicate which of these topics would be most helpful:\n\n• Registration procedures for design protection?\n• Strategies for maximizing design protection?\n• International protection through the Hague System?\n• How design rights differ from utility patents or copyright?\n• Enforcement options for design infringement?\n• Costs and timelines for design registration?\n\nThis will help me focus my guidance on your specific needs.";
           case 'infringement':
-            return "Regarding IP infringement, I can provide guidance on cease and desist letters, damage calculations, alternative dispute resolution, or preventive measures. What specific aspect would be most relevant to your situation?";
+            return "I understand we're discussing IP infringement issues. To provide more relevant advice, could you specify:\n\n• Which type of IP right is being infringed (trademark, copyright, patent, design)?\n• Whether you're the rights holder or responding to an infringement claim?\n• If you're considering formal legal action or seeking alternative resolutions?\n• Whether the infringement is occurring online or offline?\n• If the infringement crosses international borders?\n\nWith this information, I can provide more targeted guidance for your situation.";
+          case 'unauthorized_access':
+            return "I understand you're asking about unauthorized data or database access. To provide more specific guidance, could you tell me:\n\n• Are you trying to protect your data from unauthorized access?\n• Has your data already been accessed without authorization?\n• Are you seeking legal remedies against someone who accessed your data?\n• Are you trying to understand the legal requirements for data protection?\n• Do you need information about specific laws like CFAA, GDPR, or others?\n\nThis will help me provide the most relevant information for your situation.";
+          case 'ip_protection':
+            return "I see you're interested in protecting your intellectual property. To provide the most helpful guidance, could you tell me more about what you're trying to protect:\n\n• Is it a brand name, logo, or slogan? (Trademark protection)\n• Creative content like text, images, music, or software? (Copyright protection)\n• A new invention or technical process? (Patent protection)\n• The appearance or design of a product? (Industrial design protection)\n• Confidential business information? (Trade secret protection)\n\nOnce I understand what you're protecting, I can provide more targeted advice.";
           default:
-            return "I can help with various intellectual property matters including trademarks, copyrights, patents, and trade secrets. What specific area of IP law would you like to explore?";
+            if (userMessage.length < 15 || userMessage.split(' ').length < 4) {
+              return "I'd be happy to help with your IP law question, but could you provide a bit more detail about your specific situation? For example:\n\n• What type of intellectual property are you dealing with? (brand names, creative works, inventions, designs)\n• What specific aspect are you interested in? (protection, registration, infringement, licensing)\n• Is this for personal use, a business, or academic purposes?\n\nThe more details you can provide, the more tailored my guidance can be.";
+            }
+            return "I'm your friendly IP law assistant, here to help with any intellectual property questions you might have. I can provide information about:\n\n• Trademarks for protecting brand identifiers\n• Copyrights for creative works\n• Patents for inventions and innovations\n• Industrial designs for product appearance\n• Trade secrets for confidential business information\n• IP enforcement strategies\n• Online content protection (including YouTube videos and social media)\n• Data protection and unauthorized access issues\n\nTo help you most effectively, could you share what specific IP topic you're interested in or what creative/business assets you're looking to protect? I'm here to provide clear, practical guidance for your situation.";
         }
       }
       
-      return "I'm your IP law assistant and can provide information about trademark registration, copyright protection, patent applications, industrial designs, and intellectual property enforcement. Each type of IP protects different aspects of creative and business assets, and I can help you understand which is most appropriate for your needs. What specific IP topic would you like to learn more about?";
+      return "I'm your friendly IP law assistant, here to help with any intellectual property questions you might have. I can provide information about:\n\n• Trademarks for protecting brand identifiers\n• Copyrights for creative works\n• Patents for inventions and innovations\n• Industrial designs for product appearance\n• Trade secrets for confidential business information\n• IP enforcement strategies\n• Online content protection (including YouTube videos and social media)\n• Sri Lankan IP laws under the Intellectual Property Act No. 36 of 2003\n\nTo help you most effectively, could you share what specific IP topic you're interested in or what creative/business assets you're looking to protect? I'm here to provide clear, practical guidance for your situation.";
     }
-  };
-  const handleSendMessage = async () => {
+  };const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
     const userMessage: Message = {
@@ -458,6 +659,18 @@ const ChatbotPage: React.FC = () => {
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsTyping(true);
+    
+    // Update conversation context with simplified approach
+    const lowerMessage = inputValue.toLowerCase();
+    const topicMatch = lowerMessage.match(/\b(trademark|copyright|patent|industrial design|infringement|unauthorized access|ip protection)\b/i);
+    
+    if (topicMatch) {
+      setConversationContext(prev => ({
+        ...prev,
+        topic: topicMatch[1].toLowerCase(),
+        followUpSuggested: false
+      }));
+    }
     
     // Get the response content
     const responseContent = simulateBotResponse(inputValue);
@@ -553,10 +766,12 @@ const ChatbotPage: React.FC = () => {
       localStorage.setItem('chatbotPageContext', JSON.stringify(conversationContext));
     }
   }, [conversationContext]);
-
   // State for feedback mechanism
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState<string | null>(null);
+  
+  // Speech recognition notification
+  const [speechNotificationShown, setSpeechNotificationShown] = useState<boolean>(false);
   
   // Function to handle feedback submission
   const handleFeedback = (messageId: string, rating: 'helpful' | 'unhelpful') => {
@@ -735,10 +950,77 @@ const ChatbotPage: React.FC = () => {
       setPersonalizedSuggestions(uniqueSuggestions.slice(0, 4));
     }
   }, [messages.length]);
+  
+  // Speech recognition states
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
+  // Initialize speech recognition on component mount
+  useEffect(() => {
+    // Check if speech recognition is supported by the browser
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+        // Setup recognition event handlers
+      recognitionRef.current.onstart = () => {
+        setIsListening(true);
+      };
+      
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+        
+        // Auto-send message if there's content and it's not in the middle of typing
+        setTimeout(() => {
+          if (recognitionRef.current && !isTyping && inputValue.trim()) {
+            handleSendMessage();
+          }
+        }, 500);
+      };
+      
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setInputValue((prev) => prev + transcript);
+      };
+      
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+      };      
+      setSpeechSupported(true);
+    } else {
+      // If speech recognition is not supported, set the flag and show a notification
+      setSpeechSupported(false);
+      if (!speechNotificationShown) {
+        setSpeechNotificationShown(true);
+        setFeedbackMessage("Voice input is not supported in your browser. Try using Chrome for the best experience.");
+        setTimeout(() => setFeedbackMessage(null), 5000);
+      }
+    }
+  }, []);
+    // Function to toggle voice input
+  const toggleVoiceInput = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      try {
+        // Clear the input if it's already been sent
+        if (!inputValue.trim()) {
+          setInputValue('');
+        }
+        recognitionRef.current?.start();
+      } catch (error) {
+        console.error('Speech recognition error on start:', error);
+      }
+    }
+  };
+  
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
-      <div className="max-w-5xl mx-auto h-[calc(100vh-4rem)] flex flex-col rounded-lg shadow-md overflow-hidden relative">
+      <div className="w-full px-4 h-[calc(100vh-4rem)] flex flex-col rounded-lg shadow-md overflow-hidden relative">
         {/* Feedback thank you message */}
         {feedbackMessage && (
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-green-100 text-green-800 px-4 py-2 rounded-full shadow-md z-50"
@@ -958,13 +1240,12 @@ const ChatbotPage: React.FC = () => {
               </div>
               
               <div className="flex space-x-4">
-                <div className="flex-1 relative">
-                  <textarea
+                <div className="flex-1 relative">                  <textarea
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Ask me about IP law, trademarks, copyrights, patents..."
-                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    placeholder={isListening ? "Listening..." : "Ask me about IP law, trademarks, copyrights, patents..."}
+                    className={`w-full px-4 py-3 pr-12 border ${isListening ? 'border-blue-500 bg-blue-50' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none`}
                     rows={2}
                     disabled={isTyping}
                     aria-label="Type your legal question"
@@ -987,17 +1268,38 @@ const ChatbotPage: React.FC = () => {
                         <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Infringement</span>
                       )}
                     </div>
-                  )}
-                </div>
+                  )}                </div>
+                {/* Voice Chat Button */}
+                <button
+                  onClick={toggleVoiceInput}
+                  disabled={isTyping || !speechSupported}
+                  className={`px-4 py-3 ${isListening 
+                    ? 'bg-red-500 hover:bg-red-600' 
+                    : 'bg-blue-600 hover:bg-blue-700'} 
+                    text-white rounded-xl transition-all duration-200 flex items-center justify-center mr-2
+                    ${!speechSupported ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  aria-label={isListening ? "Stop recording" : "Start voice input"}
+                  title={speechSupported ? (isListening ? "Stop recording" : "Start voice input") : "Voice input not supported on this browser"}
+                >
+                  {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                </button>
+                {/* Send Button */}
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputValue.trim() || isTyping}
                   className="px-6 py-3 bg-gradient-to-r from-blue-600 to-emerald-500 text-white rounded-xl hover:from-blue-700 hover:to-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
                   aria-label="Send message"
                 >
-                  <Send className="h-5 w-5" />
-                </button>
+                  <Send className="h-5 w-5" />                </button>
               </div>
+              
+              {/* Feedback notification */}
+              {feedbackMessage && (
+                <div className="mt-3 p-2 bg-blue-100 text-blue-800 rounded-lg animate-fade-in-out flex items-center justify-center">
+                  <div className="text-sm">{feedbackMessage}</div>
+                </div>
+              )}
+              
               <p className="text-xs text-gray-500 mt-2">
                 This AI assistant provides general legal information. Always consult with a qualified IP lawyer for specific legal advice.
               </p>
