@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Scale, Shield, User, Mail, Lock, Phone, FileText } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useNavigate } from 'react-router-dom';
 
 const AuthPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'lawyer'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [showPrivacyNotice, setShowPrivacyNotice] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -17,19 +21,165 @@ const AuthPage: React.FC = () => {
     mfaEnabled: false,
   });
   const { t } = useLanguage();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (sessionStorage.getItem('showConsultToast') === '1') {
+      toast.info('For Consult a lawyer Sign Up Please', { position: 'top-center', autoClose: 3000 });
+      sessionStorage.removeItem('showConsultToast');
+    }
+    if (sessionStorage.getItem('showSearchToast') === '1') {
+      toast.info('Please Sign Up First', { position: 'top-center', autoClose: 3000 });
+      sessionStorage.removeItem('showSearchToast');
+    }
+  }, []);
+  // Add effect to block navigation if not logged in
+  React.useEffect(() => {
+    const handleNavClick = (e: MouseEvent) => {
+      // Check if user is logged in by verifying token existence
+      const token = localStorage.getItem('token');
+      const isLoggedIn = !!token; // Convert to boolean
+      
+      if (!isLoggedIn) {
+        const target = e.target as HTMLElement;
+        // Block only nav links in header
+        if (target.closest('nav, .header-nav, .main-nav, .top-nav')) {
+          e.preventDefault();
+          toast.info('Please log in to access this feature.', { position: 'top-center', autoClose: 2000 });
+        }
+      }
+    };
+    document.addEventListener('click', handleNavClick, true);
+    return () => document.removeEventListener('click', handleNavClick, true);
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    }));
-  };
+    }));  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Function to parse JWT token
+  const parseJwt = (token: string) => {
+    try {
+      return JSON.parse(atob(token.split('.')[1]));
+    } catch (e) {
+      return null;
+    }
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log('Form submitted:', formData);
+    
+    try {
+      // Validate forms
+      if ((activeTab === 'signup' || activeTab === 'lawyer') && 
+          formData.password !== formData.confirmPassword) {
+        toast.error('Passwords do not match');
+        return;
+      }
+      
+      setIsLoading(true);
+      
+      let endpoint = '';
+      let payload = {};
+      
+      if (activeTab === 'login') {
+        endpoint = 'http://localhost:8080/auth/login';
+        payload = {
+          email: formData.email,
+          password: formData.password
+        };      } else if (activeTab === 'signup') {
+        endpoint = 'http://localhost:8080/auth/registerUser';
+        payload = {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          user_type: 'user'
+        };
+      } else if (activeTab === 'lawyer') {
+        endpoint = 'http://localhost:8080/auth/registerLawyer';
+        payload = {
+          name: formData.name,
+          email: formData.email,          password: formData.password,
+          phone: formData.phone,
+          licenseNumber: formData.licenseNumber,
+          specialty: formData.specialty,
+          user_type: 'lawyer'
+        };
+      }
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+        const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'An error occurred');
+      }
+      
+      if (activeTab === 'login') {
+        // Save token to localStorage or sessionStorage
+        localStorage.setItem('token', data.token);
+        // Redirect to dashboard based on user role
+        const tokenPayload = parseJwt(data.token);
+        const userRole = tokenPayload.role || tokenPayload.usertype;
+        
+        toast.success(t('Login successful!'));
+        
+        if (userRole === 'lawyer') {
+          navigate('/lawyer-dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+      } else {
+        toast.success(activeTab === 'signup' ? t('Registration successful! Please login.') : t('Lawyer registration successful! Please login.'));
+        setActiveTab('login');
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'An error occurred');
+      console.error('Error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+      
+      if (activeTab === 'login') {
+        // Save token to localStorage or sessionStorage
+        localStorage.setItem('token', data.token);
+        // Redirect to dashboard based on user role
+        const tokenPayload = parseJwt(data.token);
+        const userRole = tokenPayload.role;
+        
+        toast.success('Login successful!');
+        
+        if (userRole === 'lawyer') {
+          navigate('/lawyer-dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+      } else {
+        toast.success(activeTab === 'signup' ? 'Registration successful! Please login.' : 'Lawyer registration successful! Please login.');
+        setActiveTab('login');
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'An error occurred');
+      console.error('Error:', error);
+    }
+  };
+  
+  // Function to parse JWT token
+  const parseJwt = (token: string) => {
+    try {
+      return JSON.parse(atob(token.split('.')[1]));
+    } catch (e) {
+      return null;
+    }
   };
 
   const specialties = [
@@ -45,6 +195,7 @@ const AuthPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-emerald-600 pt-16">
+      <ToastContainer />
       <div className="max-w-md mx-auto px-4 py-8">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -389,8 +540,26 @@ const AuthPage: React.FC = () => {
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       aria-label="Toggle password visibility"
                     >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Confirm your password"
+                      required
+                      aria-label="Confirm password"
+                    />
                   </div>
                 </div>
               </>
@@ -424,14 +593,13 @@ const AuthPage: React.FC = () => {
                   </button>
                 </label>
               </div>
-            )}
-
-            {/* Submit Button */}
+            )}            {/* Submit Button */}
             <button
               type="submit"
+              disabled={isLoading}
               className="w-full py-3 bg-gradient-to-r from-blue-900 to-emerald-600 text-white rounded-lg hover:from-blue-800 hover:to-emerald-500 transition-all duration-200 font-medium"
             >
-              {activeTab === 'login' ? 'Sign In' : activeTab === 'signup' ? 'Create Account' : 'Register as Lawyer'}
+              {isLoading ? 'Processing...' : activeTab === 'login' ? 'Sign In' : activeTab === 'signup' ? 'Create Account' : 'Register as Lawyer'}
             </button>
           </form>
         </div>
