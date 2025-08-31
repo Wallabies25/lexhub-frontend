@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Scale, Menu, X, Globe, Settings, Activity, Sun, Moon, Laptop } from 'lucide-react';
+import { Scale, Menu, X, Globe, User, Briefcase, Shield, Settings, Activity, Sun, Moon, Laptop } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -13,19 +13,15 @@ const Header: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const location = useLocation();
   const { language, setLanguage, t } = useLanguage();
-  const { isLoggedIn, logout, user } = useUser();
-  const { theme, toggleTheme } = useTheme();
-  
-  // Force isLoggedIn to false on auth page
-  const isAuthPage = location.pathname === '/auth';
-  const showProfile = isLoggedIn && !isAuthPage;
+  const { isLoggedIn, role, setRole, logout, user } = useUser();
+  const { theme, toggleTheme, currentTheme } = useTheme();
 
   const navItems = [
     { path: '/home', label: t('nav.home') },
     { path: '/chatbot', label: t('nav.chatbot') },
     { path: '/statutes', label: t('nav.statutes') },
     { path: '/forum', label: t('nav.forum') },
-    { path: '/blogs', label: t('nav.blogs') }, // Blogs nav item with translation
+    { path: '/blogs', label: 'Blogs' }, // New Blogs nav item
     { path: '/consultation', label: t('nav.consultation') },
     { path: '/about', label: t('nav.about') },
   ];
@@ -36,37 +32,69 @@ const Header: React.FC = () => {
     { code: 'ta', name: 'தமிழ்', flag: '🇱🇰' },
   ];
 
-  // Close profile dropdown if we navigate to the auth page
-  useEffect(() => {
-    if (isAuthPage && isProfileOpen) {
-      setIsProfileOpen(false);
-    }
-  }, [isAuthPage]);
-
+  // Profile button logic
+  const renderProfileButton = () => {
+    if (!isLoggedIn) return null;
+    let photo = user?.photo || '/default-avatar.png';
+    // Use user.displayName and user.bio directly
+    return (
+      <div className="relative">
+        <button
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors text-sm font-medium"
+          onClick={() => setIsProfileOpen(!isProfileOpen)}
+        >
+          <img src={photo} alt="Profile" className="w-7 h-7 rounded-full object-cover border-2 border-white" />
+          <span className="hidden sm:inline">{user?.displayName || 'Profile'}</span>
+        </button>
+        {isProfileOpen && (
+          <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+            <div className="px-4 py-2 border-b border-gray-100 flex items-center space-x-2">
+              <img src={photo} alt="Profile" className="w-8 h-8 rounded-full object-cover border-2 border-blue-900" />
+              <div>
+                <div className="font-semibold text-gray-900">{user?.displayName || ''}</div>
+                <div className="text-xs text-gray-500">{user?.email || ''}</div>
+                {user?.bio && (
+                  <div className="text-xs text-gray-400 mt-1 line-clamp-2">{user.bio}</div>
+                )}
+              </div>
+            </div>
+            <button
+              className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              onClick={() => { setShowSettings(true); setIsProfileOpen(false); }}
+            >
+              <Settings className="h-4 w-4" />
+              <span>Settings</span>
+            </button>
+            <button className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+              <Activity className="h-4 w-4" />
+              <span>Recent Activities</span>
+            </button>
+            <button
+              onClick={() => { logout(); setIsProfileOpen(false); }}
+              className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 mt-2"
+            >
+              Logout
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
   return (
     <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-16 w-full">
-          {/* Logo */}
+        <div className="flex items-center h-16 w-full">          {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 flex-shrink-0">
             <div className="p-2 bg-blue-900 rounded-lg">
               <Scale className="h-6 w-6 text-emerald-400" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-blue-900 dark:text-blue-400">LexHub IP</h1>
-              {isLoggedIn && !isAuthPage && (
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Welcome, {user?.displayName || 'User'}
-                </p>
-              )}
-              {(!isLoggedIn || isAuthPage) && (
-                <p className="text-xs text-gray-600 dark:text-gray-400">Sri Lanka</p>
-              )}
+              <p className="text-xs text-gray-600 dark:text-gray-400">Sri Lanka</p>
             </div>
           </Link>
 
-          {/* Desktop Navigation - expanded to fill space */}          
-          <nav className="hidden md:flex flex-1 items-center justify-center mx-8 gap-8">
+          {/* Desktop Navigation - expanded to fill space */}          <nav className="hidden md:flex flex-1 items-center justify-center mx-8 gap-8">
             {navItems.map((item) => (
               <Link
                 key={item.path}
@@ -81,11 +109,7 @@ const Header: React.FC = () => {
                 {item.label}
               </Link>
             ))}
-          </nav>
-          
-          {/* Language Toggle & Profile Button */}          
-          <div className="flex items-center space-x-4 flex-shrink-0">
-            {/* Theme Toggle */}
+          </nav>          {/* Language Toggle & Profile Button */}          <div className="flex items-center space-x-4 flex-shrink-0">          {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
               className="relative flex items-center space-x-2 px-3 py-2.5 text-sm font-medium rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm border border-gray-300 dark:border-gray-600"
@@ -114,8 +138,7 @@ const Header: React.FC = () => {
                 aria-label="Select language"
                 aria-expanded={isLanguageOpen}
                 aria-haspopup="true"
-              >
-                <Globe className="h-4 w-4" />
+              >                <Globe className="h-4 w-4" />
                 <span className="hidden sm:inline">
                   {languages.find(lang => lang.code === language)?.name}
                 </span>
@@ -138,62 +161,54 @@ const Header: React.FC = () => {
                     </button>
                   ))}
                 </div>
-              )}
-            </div>
-            
-            {/* Profile Sector: Only shown when logged in AND not on auth page */}
-            {showProfile && (
-              <div className="relative flex items-center bg-gray-100 dark:bg-gray-800 rounded-full px-2 py-1 flex-grow min-w-0 max-w-xs md:max-w-none md:flex-grow md:ml-0 ml-0">
-                <button
-                  className="flex-shrink-0 items-center justify-center w-10 h-10 rounded-full bg-blue-900 hover:bg-blue-800 transition-colors focus:outline-none flex"
-                  aria-label="Profile"
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
-                >
-                  <img src={user?.photo || '/default-avatar.png'} alt="Profile" className="w-7 h-7 rounded-full object-cover border-2 border-white dark:border-gray-700" />
-                </button>
-                <span
-                  className="font-medium text-gray-800 dark:text-gray-200 hidden md:inline cursor-pointer flex-grow ml-2 truncate text-right select-none"
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  title={user?.displayName || 'User'}
-                >
-                  {user?.displayName || 'User'}
-                </span>
-              </div>
-            )}
-            
-            {showProfile && isProfileOpen && (
-              <div className="absolute right-0 top-12 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
-                <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex items-center space-x-2">
-                  <img src={user?.photo || '/default-avatar.png'} alt="Profile" className="w-8 h-8 rounded-full object-cover border-2 border-blue-900 dark:border-blue-700" />
-                  <div>
-                    <div className="font-semibold text-gray-900 dark:text-white">{user?.displayName || 'User'}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">{user?.email || 'john.doe@email.com'}</div>
-                    {user?.bio && (
-                      <div className="text-xs text-gray-400 dark:text-gray-500 mt-1 line-clamp-2">{user.bio}</div>
-                    )}
+              )}            </div>
+            {/* Profile Sector: icon and name grouped together, with dropdown */}
+            <div className="relative flex items-center bg-gray-100 dark:bg-gray-800 rounded-full px-2 py-1 flex-grow min-w-0 max-w-xs md:max-w-none md:flex-grow md:ml-0 ml-0">
+              <button
+                className="flex-shrink-0 items-center justify-center w-10 h-10 rounded-full bg-blue-900 hover:bg-blue-800 transition-colors focus:outline-none flex"
+                aria-label="Profile"
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+              >
+                <img src={user?.photo || '/default-avatar.png'} alt="Profile" className="w-7 h-7 rounded-full object-cover border-2 border-white dark:border-gray-700" />
+              </button>
+              <span
+                className="font-medium text-gray-800 dark:text-gray-200 hidden md:inline cursor-pointer flex-grow ml-2 truncate text-right select-none"
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                title={user?.displayName || 'Chandramukhiee'}
+              >                {user?.displayName || 'Chandramukhiee'}
+              </span>
+              {isProfileOpen && (
+                <div className="absolute right-0 top-12 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                  <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex items-center space-x-2">
+                    <img src={user?.photo || '/default-avatar.png'} alt="Profile" className="w-8 h-8 rounded-full object-cover border-2 border-blue-900 dark:border-blue-700" />
+                    <div>
+                      <div className="font-semibold text-gray-900 dark:text-white">{user?.displayName || 'Chandramukhiee'}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{user?.email || 'john.doe@email.com'}</div>
+                      {user?.bio && (
+                        <div className="text-xs text-gray-400 dark:text-gray-500 mt-1 line-clamp-2">{user.bio}</div>
+                      )}
+                    </div>
                   </div>
+                  <button
+                    className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    onClick={() => { setShowSettings(true); setIsProfileOpen(false); }}
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </button>
+                  <button className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <Activity className="h-4 w-4" />
+                    <span>Recent Activities</span>
+                  </button>
+                  <button
+                    onClick={() => { logout(); setIsProfileOpen(false); }}
+                    className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 mt-2"
+                  >
+                    Logout
+                  </button>
                 </div>
-                <button
-                  className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  onClick={() => { setShowSettings(true); setIsProfileOpen(false); }}
-                >
-                  <Settings className="h-4 w-4" />
-                  <span>Settings</span>
-                </button>
-                <button className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <Activity className="h-4 w-4" />
-                  <span>Recent Activities</span>
-                </button>
-                <button
-                  onClick={() => { logout(); setIsProfileOpen(false); }}
-                  className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 mt-2"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
-
-            {/* Mobile Menu Button */}
+              )}
+            </div>            {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden p-2 text-gray-600 hover:text-blue-900 dark:text-gray-300 dark:hover:text-white transition-colors"

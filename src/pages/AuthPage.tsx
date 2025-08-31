@@ -4,7 +4,6 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '../contexts/UserContext';
 
 const AuthPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'lawyer'>('login');
@@ -20,9 +19,9 @@ const AuthPage: React.FC = () => {
     licenseNumber: '',
     specialty: '',
     mfaEnabled: false,
-  });  const { t } = useLanguage();
+  });
+  const { t } = useLanguage();
   const navigate = useNavigate();
-  const { login } = useUser();
 
   useEffect(() => {
     if (sessionStorage.getItem('showConsultToast') === '1') {
@@ -54,12 +53,12 @@ const AuthPage: React.FC = () => {
     return () => document.removeEventListener('click', handleNavClick, true);
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {    const { name, value, type } = e.target;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    }));
-  };
+    }));  };
 
   // Function to parse JWT token
   const parseJwt = (token: string) => {
@@ -85,24 +84,25 @@ const AuthPage: React.FC = () => {
       
       let endpoint = '';
       let payload = {};
-        if (activeTab === 'login') {
+      
+      if (activeTab === 'login') {
         endpoint = 'http://localhost:8080/auth/login';
         payload = {
           email: formData.email,
           password: formData.password
-        };} else if (activeTab === 'signup') {
+        };      } else if (activeTab === 'signup') {
         endpoint = 'http://localhost:8080/auth/registerUser';
         payload = {
           name: formData.name,
           email: formData.email,
           password: formData.password,
           user_type: 'user'
-        };      } else if (activeTab === 'lawyer') {
+        };
+      } else if (activeTab === 'lawyer') {
         endpoint = 'http://localhost:8080/auth/registerLawyer';
         payload = {
           name: formData.name,
-          email: formData.email,
-          password: formData.password,
+          email: formData.email,          password: formData.password,
           phone: formData.phone,
           licenseNumber: formData.licenseNumber,
           specialty: formData.specialty,
@@ -114,49 +114,71 @@ const AuthPage: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-        },        body: JSON.stringify(payload)
+        },
+        body: JSON.stringify(payload)
       });
-      const data = await response.json();
+        const data = await response.json();
       
       if (!response.ok) {
         throw new Error(data.message || 'An error occurred');
-      }      if (activeTab === 'login') {
-        // Save token to localStorage or sessionStorage based on "Remember me" checkbox
-        const storage = formData.mfaEnabled ? localStorage : sessionStorage;
-        storage.setItem('token', data.token);
-        
-        // Save user details to storage
+      }
+      
+      if (activeTab === 'login') {
+        // Save token to localStorage or sessionStorage
+        localStorage.setItem('token', data.token);
+        // Redirect to dashboard based on user role
         const tokenPayload = parseJwt(data.token);
         const userRole = tokenPayload.role || tokenPayload.usertype;
-        const userName = tokenPayload.name || formData.name;
         
-        // Save user info for display
-        storage.setItem('user_name', userName);
-        storage.setItem('user_role', userRole);
-        storage.setItem('user_email', formData.email);
-          // Update UserContext
-        login(userRole as any);
+        toast.success(t('Login successful!'));
         
-        toast.success(t('Login successful! Welcome back, ' + userName));
-        
-        // Redirect to home page after login
-        navigate('/home');} else {
-        // For successful registration
+        if (userRole === 'lawyer') {
+          navigate('/lawyer-dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+      } else {
         toast.success(activeTab === 'signup' ? t('Registration successful! Please login.') : t('Lawyer registration successful! Please login.'));
-        
-        // Pre-fill email field for login convenience
-        setFormData(prev => ({
-          ...prev,
-          password: '',
-          confirmPassword: ''
-        }));
-        
         setActiveTab('login');
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'An error occurred');
-      console.error('Error:', error);    } finally {
+      console.error('Error:', error);
+    } finally {
       setIsLoading(false);
+    }
+  };
+      
+      if (activeTab === 'login') {
+        // Save token to localStorage or sessionStorage
+        localStorage.setItem('token', data.token);
+        // Redirect to dashboard based on user role
+        const tokenPayload = parseJwt(data.token);
+        const userRole = tokenPayload.role;
+        
+        toast.success('Login successful!');
+        
+        if (userRole === 'lawyer') {
+          navigate('/lawyer-dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+      } else {
+        toast.success(activeTab === 'signup' ? 'Registration successful! Please login.' : 'Lawyer registration successful! Please login.');
+        setActiveTab('login');
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'An error occurred');
+      console.error('Error:', error);
+    }
+  };
+  
+  // Function to parse JWT token
+  const parseJwt = (token: string) => {
+    try {
+      return JSON.parse(atob(token.split('.')[1]));
+    } catch (e) {
+      return null;
     }
   };
 
@@ -281,7 +303,8 @@ const AuthPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">                  <label className="flex items-center">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center">
                     <input
                       type="checkbox"
                       name="mfaEnabled"
@@ -289,7 +312,7 @@ const AuthPage: React.FC = () => {
                       onChange={handleInputChange}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                    <span className="ml-2 text-sm text-gray-600">Enable 2FA</span>
                   </label>
                   <button type="button" className="text-sm text-blue-600 hover:text-blue-700">
                     Forgot password?

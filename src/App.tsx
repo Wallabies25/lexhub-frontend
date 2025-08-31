@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Header from './components/Header';
 import HomePage from './pages/HomePage';
 import ChatbotPage from './pages/ChatbotPage';
@@ -23,7 +23,7 @@ function AppContent() {
   const location = useLocation();
   const { currentTheme } = useTheme();
   // Remove header for overview pages as well
-  const noHeaderRoutes = ['/', '/ai-assistant', '/statute-overview', '/consultation-overview', '/auth'];
+  const noHeaderRoutes = ['/', '/ai-assistant', '/statute-overview', '/consultation-overview'];
   const hideHeader = noHeaderRoutes.includes(location.pathname);
   
   // Update document metadata based on theme
