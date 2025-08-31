@@ -4,11 +4,13 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '../contexts/UserContext';
 
 const AuthPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'lawyer'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [showPrivacyNotice, setShowPrivacyNotice] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -18,9 +20,9 @@ const AuthPage: React.FC = () => {
     licenseNumber: '',
     specialty: '',
     mfaEnabled: false,
-  });
-  const { t } = useLanguage();
+  });  const { t } = useLanguage();
   const navigate = useNavigate();
+  const { login } = useUser();
 
   useEffect(() => {
     if (sessionStorage.getItem('showConsultToast') === '1') {
@@ -32,12 +34,13 @@ const AuthPage: React.FC = () => {
       sessionStorage.removeItem('showSearchToast');
     }
   }, []);
-
   // Add effect to block navigation if not logged in
   React.useEffect(() => {
     const handleNavClick = (e: MouseEvent) => {
-      // Only block if not logged in (replace with real auth check)
-      const isLoggedIn = false; // TODO: Replace with real auth logic
+      // Check if user is logged in by verifying token existence
+      const token = localStorage.getItem('token');
+      const isLoggedIn = !!token; // Convert to boolean
+      
       if (!isLoggedIn) {
         const target = e.target as HTMLElement;
         // Block only nav links in header
@@ -51,18 +54,110 @@ const AuthPage: React.FC = () => {
     return () => document.removeEventListener('click', handleNavClick, true);
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {    const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Function to parse JWT token
+  const parseJwt = (token: string) => {
+    try {
+      return JSON.parse(atob(token.split('.')[1]));
+    } catch (e) {
+      return null;
+    }
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log('Form submitted:', formData);
+    
+    try {
+      // Validate forms
+      if ((activeTab === 'signup' || activeTab === 'lawyer') && 
+          formData.password !== formData.confirmPassword) {
+        toast.error('Passwords do not match');
+        return;
+      }
+      
+      setIsLoading(true);
+      
+      let endpoint = '';
+      let payload = {};
+        if (activeTab === 'login') {
+        endpoint = 'http://localhost:8080/auth/login';
+        payload = {
+          email: formData.email,
+          password: formData.password
+        };} else if (activeTab === 'signup') {
+        endpoint = 'http://localhost:8080/auth/registerUser';
+        payload = {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          user_type: 'user'
+        };      } else if (activeTab === 'lawyer') {
+        endpoint = 'http://localhost:8080/auth/registerLawyer';
+        payload = {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          phone: formData.phone,
+          licenseNumber: formData.licenseNumber,
+          specialty: formData.specialty,
+          user_type: 'lawyer'
+        };
+      }
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'An error occurred');
+      }      if (activeTab === 'login') {
+        // Save token to localStorage or sessionStorage based on "Remember me" checkbox
+        const storage = formData.mfaEnabled ? localStorage : sessionStorage;
+        storage.setItem('token', data.token);
+        
+        // Save user details to storage
+        const tokenPayload = parseJwt(data.token);
+        const userRole = tokenPayload.role || tokenPayload.usertype;
+        const userName = tokenPayload.name || formData.name;
+        
+        // Save user info for display
+        storage.setItem('user_name', userName);
+        storage.setItem('user_role', userRole);
+        storage.setItem('user_email', formData.email);
+          // Update UserContext
+        login(userRole as any);
+        
+        toast.success(t('Login successful! Welcome back, ' + userName));
+        
+        // Redirect to home page after login
+        navigate('/home');} else {
+        // For successful registration
+        toast.success(activeTab === 'signup' ? t('Registration successful! Please login.') : t('Lawyer registration successful! Please login.'));
+        
+        // Pre-fill email field for login convenience
+        setFormData(prev => ({
+          ...prev,
+          password: '',
+          confirmPassword: ''
+        }));
+        
+        setActiveTab('login');
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'An error occurred');
+      console.error('Error:', error);    } finally {
+      setIsLoading(false);
+    }
   };
 
   const specialties = [
@@ -186,8 +281,7 @@ const AuthPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center">
+                <div className="flex items-center justify-between">                  <label className="flex items-center">
                     <input
                       type="checkbox"
                       name="mfaEnabled"
@@ -195,7 +289,7 @@ const AuthPage: React.FC = () => {
                       onChange={handleInputChange}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="ml-2 text-sm text-gray-600">Enable 2FA</span>
+                    <span className="ml-2 text-sm text-gray-600">Remember me</span>
                   </label>
                   <button type="button" className="text-sm text-blue-600 hover:text-blue-700">
                     Forgot password?
@@ -423,8 +517,26 @@ const AuthPage: React.FC = () => {
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       aria-label="Toggle password visibility"
                     >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Confirm your password"
+                      required
+                      aria-label="Confirm password"
+                    />
                   </div>
                 </div>
               </>
@@ -458,14 +570,13 @@ const AuthPage: React.FC = () => {
                   </button>
                 </label>
               </div>
-            )}
-
-            {/* Submit Button */}
+            )}            {/* Submit Button */}
             <button
               type="submit"
+              disabled={isLoading}
               className="w-full py-3 bg-gradient-to-r from-blue-900 to-emerald-600 text-white rounded-lg hover:from-blue-800 hover:to-emerald-500 transition-all duration-200 font-medium"
             >
-              {activeTab === 'login' ? 'Sign In' : activeTab === 'signup' ? 'Create Account' : 'Register as Lawyer'}
+              {isLoading ? 'Processing...' : activeTab === 'login' ? 'Sign In' : activeTab === 'signup' ? 'Create Account' : 'Register as Lawyer'}
             </button>
           </form>
         </div>

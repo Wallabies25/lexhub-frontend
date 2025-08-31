@@ -10,18 +10,18 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const translations = {
-  en: {
+const translations = {  en: {
     'nav.home': 'Home',
     'nav.chatbot': 'AI Assistant',
     'nav.statutes': 'Statute Database',
     'nav.forum': 'Community Forum',
+    'nav.blogs': 'Blogs',
     'nav.consultation': 'Lawyer Consultation',
     'nav.student': 'Student Dashboard',
     'nav.lawyer': 'Lawyer Dashboard',
     'nav.about': 'About',
     'nav.login': 'Login',
-    'hero.title': 'Empowering Sri Lanka with IP Law Knowledge',
+    'hero.title': 'Empowering Sri Lanka With IP Law Knowledge',
     'hero.subtitle': 'Your comprehensive platform for intellectual property law resources, AI assistance, and legal consultation',
     'hero.cta': 'Get Started',
     'search.placeholder': 'Search IP statutes, cases, or legal topics...',
@@ -32,12 +32,12 @@ const translations = {
     'filter.designs': 'Industrial Designs',
     'consultation.cta': 'Consult a Lawyer',
     'chatbot.open': 'Ask AI Assistant',
-  },
-  si: {
+  },  si: {
     'nav.home': 'මුල් පිටුව',
     'nav.chatbot': 'AI සහායක',
     'nav.statutes': 'නීති දත්ත ගබඩාව',
     'nav.forum': 'ප්‍රජා සංසදය',
+    'nav.blogs': 'බ්ලොග්',
     'nav.consultation': 'නීතිඥ උපදේශනය',
     'nav.student': 'ශිෂ්‍ය පුවරුව',
     'nav.lawyer': 'නීතිඥ පුවරුව',
@@ -54,12 +54,12 @@ const translations = {
     'filter.designs': 'කාර්මික නිර්මාණ',
     'consultation.cta': 'නීතිඥවරයෙකුගෙන් උපදේශනය ලබා ගන්න',
     'chatbot.open': 'AI සහායකයෙන් අසන්න',
-  },
-  ta: {
+  },  ta: {
     'nav.home': 'முகப்பு',
     'nav.chatbot': 'AI உதவியாளர்',
     'nav.statutes': 'சட்ட தரவுத்தளம்',
     'nav.forum': 'சமூக மன்றம்',
+    'nav.blogs': 'வலைப்பதிவுகள்',
     'nav.consultation': 'வழக்கறிஞர் ஆலோசனை',
     'nav.student': 'மாணவர் டாஷ்போர்டு',
     'nav.lawyer': 'வழக்கறிஞர் டாஷ்போர்டு',

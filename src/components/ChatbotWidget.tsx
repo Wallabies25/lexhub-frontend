@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { Link } from 'react-router-dom';
 
 interface ChatMessage {
@@ -24,6 +25,7 @@ const ChatbotWidget: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
+  const { currentTheme } = useTheme();
 
   // Add CSS for animations
   useEffect(() => {
@@ -182,11 +184,9 @@ const ChatbotWidget: React.FC = () => {
         aria-label={t('chatbot.open')}
       >
         <MessageCircle className="h-8 w-8" />
-      </button>
-
-      {/* Chat Widget */}
+      </button>      {/* Chat Widget */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 flex flex-col">
+        <div className="fixed bottom-6 right-6 w-96 h-[500px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 flex flex-col">
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-500 to-emerald-400 text-white p-4 rounded-t-2xl flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -221,22 +221,22 @@ const ChatbotWidget: React.FC = () => {
                   className={`inline-block px-3 py-2 rounded-lg max-w-[85%] transition-all duration-200 hover:shadow-md ${
                     msg.type === 'user' 
                       ? 'bg-blue-600 text-white rounded-tr-none' 
-                      : 'bg-gray-100 text-gray-800 rounded-tl-none'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-tl-none'
                   }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                  <p className={`text-xs mt-1 ${msg.type === 'user' ? 'text-blue-200' : 'text-gray-500'}`}>
+                  <p className={`text-xs mt-1 ${msg.type === 'user' ? 'text-blue-200' : 'text-gray-500 dark:text-gray-400'}`}>
                     {msg.timestamp.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
                   </p>
                 </div>
               </div>
             ))}            {isTyping && (
               <div className="mb-3">
-                <div className="inline-block px-3 py-2 bg-gray-100 text-gray-800 rounded-lg rounded-tl-none max-w-[85%]">
+                <div className="inline-block px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg rounded-tl-none max-w-[85%]">
                   <div className="flex space-x-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full" style={{ animation: 'typingBounce 1s infinite' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full" style={{ animation: 'typingBounce 1s infinite 0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full" style={{ animation: 'typingBounce 1s infinite 0.2s' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full" style={{ animation: 'typingBounce 1s infinite' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full" style={{ animation: 'typingBounce 1s infinite 0.1s' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full" style={{ animation: 'typingBounce 1s infinite 0.2s' }}></div>
                   </div>
                 </div>
               </div>
@@ -247,12 +247,12 @@ const ChatbotWidget: React.FC = () => {
             {/* Quick Questions - Only show if less than 3 messages */}
             {chatHistory.length < 3 && (
               <div className="space-y-2 mt-4">
-                <p className="text-xs text-gray-500 font-medium">Quick questions:</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Quick questions:</p>
                 {quickQuestions.map((question, index) => (
                   <button
                     key={index}
                     onClick={() => handleQuickQuestion(question)}
-                    className="w-full text-left p-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                    className="w-full text-left p-2 text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-colors"
                   >
                     {question}
                   </button>
@@ -262,20 +262,20 @@ const ChatbotWidget: React.FC = () => {
           </div>
 
           {/* Input Area */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex space-x-2">
               <input
                 type="text"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Type your IP law question..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               />
               <button
                 onClick={handleSend}
                 disabled={!message.trim() || isTyping}
-                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-emerald-400 text-white rounded-lg hover:from-blue-600 hover:to-emerald-500 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-emerald-400 text-white rounded-lg hover:from-blue-600 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 aria-label="Send message"
               >
                 <Send className="h-4 w-4" />
@@ -284,7 +284,7 @@ const ChatbotWidget: React.FC = () => {
             <div className="mt-2 text-center">
               <Link 
                 to="/chatbot" 
-                className="text-xs text-blue-600 hover:underline"
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                 onClick={() => setIsOpen(false)}
               >
                 Open full IP Law Assistant

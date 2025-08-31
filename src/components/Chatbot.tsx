@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, MessageCircle, User, Bot, Lightbulb, BookOpen, Clock, Award, FileText, Copy, CheckCircle } from 'lucide-react';
+import { Send, MessageCircle, User, Bot, Lightbulb, BookOpen, Clock } from 'lucide-react';
 import './chatbot.css'; // Importing custom CSS for animations
 
 interface Message {
@@ -22,7 +22,8 @@ interface ConversationContext {
   sentimentScore?: number;
 }
 
-const Chatbot: React.FC = () => {  const [messages, setMessages] = useState<Message[]>([
+const Chatbot: React.FC = () => {
+  const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       type: 'bot',
@@ -33,7 +34,8 @@ const Chatbot: React.FC = () => {  const [messages, setMessages] = useState<Mess
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [conversationContext, setConversationContext] = useState<ConversationContext>({});
-  const messagesEndRef = useRef<HTMLDivElement>(null);  const [apiKey, setApiKey] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [apiKey, setApiKey] = useState<string | null>(null);
   const [isConnectedToBackend, setIsConnectedToBackend] = useState(false);
   const [copiedText, setCopiedText] = useState<string | null>(null);
   
@@ -130,13 +132,6 @@ const Chatbot: React.FC = () => {  const [messages, setMessages] = useState<Mess
       return "I apologize, but I'm having trouble connecting to my knowledge base right now. Please try again in a moment.";
     }
   };
-  
-  const quickSuggestions = [
-    'How do I register a trademark?',
-    'What\'s the difference between copyright and patent?',
-    'How long does IP protection last?',
-    'How to handle IP infringement?'
-  ];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -145,7 +140,8 @@ const Chatbot: React.FC = () => {  const [messages, setMessages] = useState<Mess
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-  // Function to analyze the conversation and update context  const updateConversationContext = (userMessage: string): ConversationContext => {
+  // Function to analyze the conversation and update context
+  const updateConversationContext = (userMessage: string): ConversationContext => {
     const lowerMessage = userMessage.toLowerCase();
     const newContext = { ...conversationContext };
     
@@ -481,8 +477,9 @@ const Chatbot: React.FC = () => {  const [messages, setMessages] = useState<Mess
               {suggestion}
             </button>
           ))}
-        </div>
-      </div>      {/* Messages */}
+        </div>      </div>
+      
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.map((message, index) => (
           <div
