@@ -1,15 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MessageCircle, Users, BookOpen, ArrowRight, Shield, Globe, Award } from 'lucide-react';
+import { Search, BookOpen, ArrowRight, FileText, Layers } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
 import ChatbotWidget from '../components/ChatbotWidget';
+
+// AnimatedCounter component for statistics animation
+interface AnimatedCounterProps {
+  end: number;
+  duration?: number;
+  suffix?: string;
+}
+
+const AnimatedCounter: React.FC<AnimatedCounterProps> = ({ end, duration = 2000, suffix = "" }) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    // Start animation immediately
+    let timeoutId: number | null = null;
+    
+    // Simple animation logic with setInterval for better browser compatibility
+    const startValue = 0;
+    const increment = Math.ceil(end / 50); // Divide animation into ~50 steps
+    const stepDuration = Math.floor(duration / 50);
+    
+    let currentValue = startValue;
+    
+    // Start the counter animation
+    const intervalId = setInterval(() => {
+      currentValue += increment;
+      
+      // Make sure we don't exceed the target value
+      if (currentValue >= end) {
+        currentValue = end;
+        clearInterval(intervalId);
+      }
+      
+      setCount(currentValue);
+    }, stepDuration);
+    
+    // Cleanup function
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [end, duration]);
+
+  return <span className="transition-all duration-100">{count}{suffix}</span>;
+};
 
 const Homepage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const { t } = useLanguage();
   const { isLoggedIn } = useUser();
+  // State to trigger counter animations
+  const [animateStats, setAnimateStats] = useState(false);
+  
+  // Trigger animations after a small delay when component mounts
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAnimateStats(true);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,34 +147,57 @@ const Homepage: React.FC = () => {
 
       {/* Only show the rest of the homepage if not logged in */}
       {!isLoggedIn && (
-        <>
-          {/* Stats Section */}
-          <section className="py-16 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                <div className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-blue-900 mb-2">
-                    500+
+        <>          {/* Stats Section with Animated Counters */}
+          <section className="py-16 bg-gradient-to-r from-blue-900 to-emerald-700 text-white overflow-hidden relative">
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-0 left-0 w-40 h-40 rounded-full bg-white"></div>
+              <div className="absolute bottom-0 right-0 w-60 h-60 rounded-full bg-white"></div>
+            </div>
+            
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                <div className="flex flex-col items-center transform transition-all duration-300 hover:scale-105">
+                  <div className="bg-white bg-opacity-20 p-4 rounded-full mb-4 shadow-lg">
+                    <FileText className="h-8 w-8" />
                   </div>
-                  <div className="text-gray-600 font-medium">Legal Documents</div>
+                  <div className="text-4xl lg:text-5xl font-bold mb-2">
+                    {animateStats && <AnimatedCounter end={500} duration={2500} suffix="+" />}
+                    {!animateStats && <span>0+</span>}
+                  </div>
+                  <div className="text-sm font-medium tracking-wider uppercase">Legal Documents</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-blue-900 mb-2">
-                    50+
+                
+                <div className="flex flex-col items-center transform transition-all duration-300 hover:scale-105">
+                  <div className="bg-white bg-opacity-20 p-4 rounded-full mb-4 shadow-lg">
+                    <BookOpen className="h-8 w-8" />
                   </div>
-                  <div className="text-gray-600 font-medium">Verified Lawyers</div>
+                  <div className="text-4xl lg:text-5xl font-bold mb-2">
+                    {animateStats && <AnimatedCounter end={50} duration={1800} suffix="+" />}
+                    {!animateStats && <span>0+</span>}
+                  </div>
+                  <div className="text-sm font-medium tracking-wider uppercase">Verified Lawyers</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-blue-900 mb-2">
-                    1000+
+                
+                <div className="flex flex-col items-center transform transition-all duration-300 hover:scale-105">
+                  <div className="bg-white bg-opacity-20 p-4 rounded-full mb-4 shadow-lg">
+                    <Layers className="h-8 w-8" />
                   </div>
-                  <div className="text-gray-600 font-medium">Users Helped</div>
+                  <div className="text-4xl lg:text-5xl font-bold mb-2">
+                    {animateStats && <AnimatedCounter end={1000} duration={3000} suffix="+" />}
+                    {!animateStats && <span>0+</span>}
+                  </div>
+                  <div className="text-sm font-medium tracking-wider uppercase">Users Helped</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-blue-900 mb-2">
-                    24/7
+                
+                <div className="flex flex-col items-center transform transition-all duration-300 hover:scale-105">
+                  <div className="bg-white bg-opacity-20 p-4 rounded-full mb-4 shadow-lg">
+                    <Search className="h-8 w-8" />
                   </div>
-                  <div className="text-gray-600 font-medium">AI Support</div>
+                  <div className="text-4xl lg:text-5xl font-bold mb-2">
+                    {animateStats && <span className="animate-pulse">24/7</span>}
+                    {!animateStats && <span>24/7</span>}
+                  </div>
+                  <div className="text-sm font-medium tracking-wider uppercase">AI Support</div>
                 </div>
               </div>
             </div>

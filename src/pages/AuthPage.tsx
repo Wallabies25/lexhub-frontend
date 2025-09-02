@@ -56,9 +56,9 @@ const AuthPage: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    }));  };
+      ...prev,      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+    }));
+  };
 
   // Function to parse JWT token
   const parseJwt = (token: string) => {
@@ -87,10 +87,10 @@ const AuthPage: React.FC = () => {
       
       if (activeTab === 'login') {
         endpoint = 'http://localhost:8080/auth/login';
-        payload = {
-          email: formData.email,
+        payload = {          email: formData.email,
           password: formData.password
-        };      } else if (activeTab === 'signup') {
+        };
+      } else if (activeTab === 'signup') {
         endpoint = 'http://localhost:8080/auth/registerUser';
         payload = {
           name: formData.name,
@@ -143,44 +143,11 @@ const AuthPage: React.FC = () => {
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'An error occurred');
-      console.error('Error:', error);
-    } finally {
+      console.error('Error:', error);    } finally {
       setIsLoading(false);
-    }
-  };
-      
-      if (activeTab === 'login') {
-        // Save token to localStorage or sessionStorage
-        localStorage.setItem('token', data.token);
-        // Redirect to dashboard based on user role
-        const tokenPayload = parseJwt(data.token);
-        const userRole = tokenPayload.role;
-        
-        toast.success('Login successful!');
-        
-        if (userRole === 'lawyer') {
-          navigate('/lawyer-dashboard');
-        } else {
-          navigate('/dashboard');
-        }
-      } else {
-        toast.success(activeTab === 'signup' ? 'Registration successful! Please login.' : 'Lawyer registration successful! Please login.');
-        setActiveTab('login');
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'An error occurred');
-      console.error('Error:', error);
-    }
-  };
+    }  };
   
-  // Function to parse JWT token
-  const parseJwt = (token: string) => {
-    try {
-      return JSON.parse(atob(token.split('.')[1]));
-    } catch (e) {
-      return null;
-    }
-  };
+  // We already have parseJwt defined above, no need for a duplicate declaration
 
   const specialties = [
     'Trademarks',

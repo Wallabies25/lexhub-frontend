@@ -5,50 +5,6 @@ import { downloadFile, openPdfInNewTab } from '../utils/DownloadUtils';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// AnimatedCounter component for statistics animation
-interface AnimatedCounterProps {
-  end: number;
-  duration?: number;
-  suffix?: string;
-}
-
-const AnimatedCounter: React.FC<AnimatedCounterProps> = ({ end, duration = 2000, suffix = "" }) => {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    // Start animation immediately
-    let timeoutId: number | null = null;
-    
-    // Simple animation logic with setInterval for better browser compatibility
-    const startValue = 0;
-    const increment = Math.ceil(end / 50); // Divide animation into ~50 steps
-    const stepDuration = Math.floor(duration / 50);
-    
-    let currentValue = startValue;
-    
-    // Start the counter animation
-    const intervalId = setInterval(() => {
-      currentValue += increment;
-      
-      // Make sure we don't exceed the target value
-      if (currentValue >= end) {
-        currentValue = end;
-        clearInterval(intervalId);
-      }
-      
-      setCount(currentValue);
-    }, stepDuration);
-    
-    // Cleanup function
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-      if (timeoutId) window.clearTimeout(timeoutId);
-    };
-  }, [end, duration]);
-
-  return <span className="transition-all duration-100">{count}{suffix}</span>;
-};
-
 interface Statute {
   id: string;
   title: string;
@@ -81,22 +37,10 @@ const StatutePage: React.FC = () => {
   const [documentResults, setDocumentResults] = useState<StatuteDocument[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isDocSearching, setIsDocSearching] = useState(false);
-  const [expandedStatute, setExpandedStatute] = useState<string | null>(null);
-  const [bookmarkedStatutes, setBookmarkedStatutes] = useState<Set<string>>(new Set());
+  const [expandedStatute, setExpandedStatute] = useState<string | null>(null);  const [bookmarkedStatutes, setBookmarkedStatutes] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'search' | 'documents'>('search');
   const [downloadStatus, setDownloadStatus] = useState<{[key: string]: 'idle' | 'loading' | 'success' | 'error'}>({});
-  // State to trigger counter animations
-  const [animateStats, setAnimateStats] = useState(false);
   const { t } = useLanguage();
-  
-  // Trigger animations after a small delay when component mounts
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setAnimateStats(true);
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }, []);
 
   const mockStatutes: Statute[] = [
     {
@@ -414,61 +358,7 @@ const StatutePage: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">IP Statute Database</h1>
           <p className="text-gray-600">Search comprehensive Sri Lankan intellectual property laws and regulations</p>
         </div>
-        
-        {/* Statistics Section with Animated Counters */}
-        <div className="bg-gradient-to-r from-blue-900 to-emerald-700 rounded-xl shadow-lg p-8 mb-8 text-white overflow-hidden relative">
-          {/* Background decoration */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 left-0 w-40 h-40 rounded-full bg-white"></div>
-            <div className="absolute bottom-0 right-0 w-60 h-60 rounded-full bg-white"></div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center relative z-10">
-            <div className="flex flex-col items-center transform transition-all duration-300 hover:scale-105">
-              <div className="bg-white bg-opacity-20 p-4 rounded-full mb-4 shadow-lg">
-                <FileText className="h-10 w-10" />
-              </div>
-              <div className="text-5xl font-bold mb-2">
-                {animateStats && <AnimatedCounter end={500} duration={2500} suffix="+" />}
-                {!animateStats && <span>0+</span>}
-              </div>
-              <div className="text-sm font-medium tracking-wider uppercase">Legal Documents</div>
-            </div>
-            
-            <div className="flex flex-col items-center transform transition-all duration-300 hover:scale-105">
-              <div className="bg-white bg-opacity-20 p-4 rounded-full mb-4 shadow-lg">
-                <BookOpen className="h-10 w-10" />
-              </div>
-              <div className="text-5xl font-bold mb-2">
-                {animateStats && <AnimatedCounter end={50} duration={1800} suffix="+" />}
-                {!animateStats && <span>0+</span>}
-              </div>
-              <div className="text-sm font-medium tracking-wider uppercase">Verified Lawyers</div>
-            </div>
-            
-            <div className="flex flex-col items-center transform transition-all duration-300 hover:scale-105">
-              <div className="bg-white bg-opacity-20 p-4 rounded-full mb-4 shadow-lg">
-                <Layers className="h-10 w-10" />
-              </div>
-              <div className="text-5xl font-bold mb-2">
-                {animateStats && <AnimatedCounter end={1000} duration={3000} suffix="+" />}
-                {!animateStats && <span>0+</span>}
-              </div>
-              <div className="text-sm font-medium tracking-wider uppercase">Users Helped</div>
-            </div>
-            
-            <div className="flex flex-col items-center transform transition-all duration-300 hover:scale-105">
-              <div className="bg-white bg-opacity-20 p-4 rounded-full mb-4 shadow-lg">
-                <Search className="h-10 w-10" />
-              </div>
-              <div className="text-5xl font-bold mb-2">
-                {animateStats && <span className="animate-pulse">24/7</span>}
-                {!animateStats && <span>24/7</span>}
-              </div>
-              <div className="text-sm font-medium tracking-wider uppercase">AI Support</div>
-            </div>
-          </div>
-        </div>
+  
         
         {/* Tab Navigation */}
         <div className="flex border-b border-gray-200 mb-6">
