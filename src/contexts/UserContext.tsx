@@ -1,38 +1,59 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { api } from '../utils/api';
 
 export type UserRole = 'admin' | 'user' | 'lawyer' | null;
 
 interface UserContextType {
   isLoggedIn: boolean;
   role: UserRole;
+  user?: any;
   setRole: (role: UserRole) => void;
-  login: (role: UserRole) => void;
+  login: (token: string, role: UserRole) => void;
   logout: () => void;
+  updateUser: (updates: Partial<any>) => Promise<void>;
 }
 
-export const UserContext = createContext<UserContextType & {
-  user?: any;
-  updateUser?: (updates: Partial<any>) => Promise<void>;
-} | undefined>(undefined);
+export const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
   const [role, setRole] = useState<UserRole>(null);
-  const [user, setUser] = useState<any>({
-    displayName: 'Chandramukhiee',
-    bio: 'Legal enthusiast. Passionate about IP law.',
-    photo: '/default-avatar.png',
-    email: 'john.doe@email.com',
-  });
+  const [user, setUser] = useState<any>(null);
 
-  const login = (newRole: UserRole) => {
+  const fetchProfile = async () => {
+    try {
+      const profile = await api.get('/users/current');
+      setUser(profile);
+      setRole(profile.user_type as UserRole);
+      setIsLoggedIn(true);
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+      // Only logout if it's an auth error
+      if (localStorage.getItem('token')) {
+        // localStorage.removeItem('token');
+        // setIsLoggedIn(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (localStorage.getItem('token')) {
+      fetchProfile();
+    }
+  }, []);
+
+  const login = (token: string, newRole: UserRole) => {
+    localStorage.setItem('token', token);
     setIsLoggedIn(true);
     setRole(newRole);
+    fetchProfile();
   };
 
   const logout = () => {
+    localStorage.removeItem('token');
     setIsLoggedIn(false);
     setRole(null);
+    setUser(null);
   };
 
   const updateUser = async (updates: Partial<any>) => {

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Scale, Shield, User, Mail, Lock, Phone, FileText } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useUser } from '../contexts/UserContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../utils/api';
 
 const AuthPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'lawyer'>('login');
@@ -21,6 +23,7 @@ const AuthPage: React.FC = () => {
     mfaEnabled: false,
   });
   const { t } = useLanguage();
+  const { login } = useUser();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -82,60 +85,43 @@ const AuthPage: React.FC = () => {
       
       setIsLoading(true);
       
-      let endpoint = '';
-      let payload = {};
+      let data;
       
       if (activeTab === 'login') {
-        endpoint = 'http://localhost:8080/auth/login';
-        payload = {          email: formData.email,
-          password: formData.password
-        };
-      } else if (activeTab === 'signup') {
-        endpoint = 'http://localhost:8080/auth/registerUser';
-        payload = {
+        const loginData = new URLSearchParams();
+        loginData.append('username', formData.email);
+        loginData.append('password', formData.password);
+        data = await api.postForm('/auth/login', loginData);
+      } else {
+        const payload = {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          user_type: 'user'
+          user_type: activeTab === 'signup' ? 'user' : 'lawyer',
+          phone: activeTab === 'lawyer' ? formData.phone : null,
+          licenseNumber: activeTab === 'lawyer' ? formData.licenseNumber : null,
+          specialty: activeTab === 'lawyer' ? formData.specialty : null,
         };
-      } else if (activeTab === 'lawyer') {
-        endpoint = 'http://localhost:8080/auth/registerLawyer';
-        payload = {
-          name: formData.name,
-          email: formData.email,          password: formData.password,
-          phone: formData.phone,
-          licenseNumber: formData.licenseNumber,
-          specialty: formData.specialty,
-          user_type: 'lawyer'
-        };
-      }
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-        const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'An error occurred');
+        data = await api.post('/auth/register', payload);
       }
       
       if (activeTab === 'login') {
-        // Save token to localStorage or sessionStorage
-        localStorage.setItem('token', data.token);
+        // FastAPI returns access_token
+        const token = data.access_token;
+        
         // Redirect to dashboard based on user role
-        const tokenPayload = parseJwt(data.token);
-        const userRole = tokenPayload.role || tokenPayload.usertype;
+        const tokenPayload = parseJwt(token);
+        const userRole = tokenPayload.role;
+        
+        // Update UserContext (handles localStorage and profile fetch)
+        login(token, userRole);
         
         toast.success(t('Login successful!'));
         
         if (userRole === 'lawyer') {
           navigate('/lawyer-dashboard');
         } else {
-          navigate('/dashboard');
+          navigate('/student-dashboard');
         }
       } else {
         toast.success(activeTab === 'signup' ? t('Registration successful! Please login.') : t('Lawyer registration successful! Please login.'));
@@ -143,9 +129,11 @@ const AuthPage: React.FC = () => {
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'An error occurred');
-      console.error('Error:', error);    } finally {
+      console.error('Error:', error);
+    } finally {
       setIsLoading(false);
-    }  };
+    }
+  };
   
   // We already have parseJwt defined above, no need for a duplicate declaration
 

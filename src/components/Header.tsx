@@ -90,23 +90,24 @@ const Header: React.FC = () => {
                 aria-label="Profile"
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
               >
-                <img src={user?.photo || '/default-avatar.png'} alt="Profile" className="w-7 h-7 rounded-full object-cover border-2 border-white" />
+                <img src={user?.profile_picture || '/default-avatar.png'} alt="Profile" className="w-7 h-7 rounded-full object-cover border-2 border-white" />
               </button>
               <span
                 className="font-medium text-gray-800 hidden md:inline cursor-pointer flex-grow ml-2 truncate text-right select-none"
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                title={user?.displayName || 'Chandramukhiee'}
-              >                {user?.displayName || 'Chandramukhiee'}
+                title={user?.name || 'Guest'}
+              >
+                {user?.name || 'Guest'}
               </span>
               {isProfileOpen && (
                 <div className="absolute right-0 top-12 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                   <div className="px-4 py-2 border-b border-gray-100 flex items-center space-x-2">
-                    <img src={user?.photo || '/default-avatar.png'} alt="Profile" className="w-8 h-8 rounded-full object-cover border-2 border-blue-900" />
+                    <img src={user?.profile_picture || '/default-avatar.png'} alt="Profile" className="w-8 h-8 rounded-full object-cover border-2 border-blue-900" />
                     <div>
-                      <div className="font-semibold text-gray-900">{user?.displayName || 'Chandramukhiee'}</div>
-                      <div className="text-xs text-gray-500">{user?.email || 'john.doe@email.com'}</div>
-                      {user?.bio && (
-                        <div className="text-xs text-gray-400 mt-1 line-clamp-2">{user.bio}</div>
+                      <div className="font-semibold text-gray-900">{user?.name || 'Guest'}</div>
+                      <div className="text-xs text-gray-500">{user?.email || ''}</div>
+                      {user?.user_type && (
+                        <div className="text-xs text-gray-400 mt-1 uppercase">{user.user_type}</div>
                       )}
                     </div>
                   </div>

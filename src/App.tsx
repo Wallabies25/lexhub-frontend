@@ -21,9 +21,8 @@ import BlogsPage from './pages/BlogsPage';
 
 function AppContent() {
   const location = useLocation();
-  const { currentTheme } = useTheme();
-  // Remove header for overview pages as well
-  const noHeaderRoutes = ['/', '/ai-assistant', '/statute-overview', '/consultation-overview'];
+  const { currentTheme } = useTheme();  // Remove header for overview pages and auth page
+  const noHeaderRoutes = ['/', '/ai-assistant', '/statute-overview', '/consultation-overview', '/auth'];
   const hideHeader = noHeaderRoutes.includes(location.pathname);
   
   // Update document metadata based on theme
