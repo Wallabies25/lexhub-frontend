@@ -1,100 +1,78 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Star, MapPin, Phone, Mail, Video, MessageSquare, User, Award, Calendar, Clock, Filter } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { api } from '../utils/api';
+import { toast } from 'react-toastify';
 
 interface Lawyer {
-  id: string;
+  id: number;
   name: string;
-  title: string;
-  specialties: string[];
-  rating: number;
-  reviews: number;
-  experience: number;
-  location: string;
-  hourlyRate: string;
-  availability: string;
-  image: string;
-  bio: string;
-  languages: string[];
-  freeConsultation: boolean;
+  user_type: string;
+  profile_picture?: string;
+  bio?: string;
+  lawyer_details?: {
+    phone?: string;
+    license_number?: string;
+    specialty?: string;
+    cases_handled?: number;
+    success_rate?: string;
+    education?: string;
+  };
 }
 
 const ConsultationPage: React.FC = () => {
+  const [lawyers, setLawyers] = useState<Lawyer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedLawyer, setSelectedLawyer] = useState<Lawyer | null>(null);
   const [consultationType, setConsultationType] = useState<'video' | 'phone' | 'inperson'>('video');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+  const [description, setDescription] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
   const { t } = useLanguage();
 
-  const lawyers: Lawyer[] = [
-    {
-      id: '1',
-      name: 'Dr. Priya Wickramasinghe',
-      title: 'Senior IP Attorney',
-      specialties: ['Trademarks', 'Brand Protection', 'IP Strategy'],
-      rating: 4.9,
-      reviews: 127,
-      experience: 15,
-      location: 'Colombo, Sri Lanka',
-      hourlyRate: 'LKR 25,000',
-      availability: 'Available this week',
-      image: 'https://images.pexels.com/photos/3760263/pexels-photo-3760263.jpeg?auto=compress&cs=tinysrgb&w=300',
-      bio: 'Dr. Wickramasinghe is a leading IP attorney with extensive experience in trademark law and brand protection strategies for multinational corporations.',
-      languages: ['English', 'Sinhala'],
-      freeConsultation: true,
-    },
-    {
-      id: '2',
-      name: 'Rohan Fernando',
-      title: 'Patent Attorney',
-      specialties: ['Patents', 'Technology Law', 'Innovation'],
-      rating: 4.8,
-      reviews: 89,
-      experience: 12,
-      location: 'Kandy, Sri Lanka',
-      hourlyRate: 'LKR 20,000',
-      availability: 'Available tomorrow',
-      image: 'https://images.pexels.com/photos/3777946/pexels-photo-3777946.jpeg?auto=compress&cs=tinysrgb&w=300',
-      bio: 'Rohan specializes in patent law with a focus on technology and innovation, helping startups and established companies protect their inventions.',
-      languages: ['English', 'Sinhala', 'Tamil'],
-      freeConsultation: true,
-    },
-    {
-      id: '3',
-      name: 'Kamala Rajapakse',
-      title: 'Copyright Specialist',
-      specialties: ['Copyrights', 'Media Law', 'Creative Industries'],
-      rating: 4.7,
-      reviews: 156,
-      experience: 10,
-      location: 'Galle, Sri Lanka',
-      hourlyRate: 'LKR 18,000',
-      availability: 'Available today',
-      image: 'https://images.pexels.com/photos/3760067/pexels-photo-3760067.jpeg?auto=compress&cs=tinysrgb&w=300',
-      bio: 'Kamala focuses on copyright law and media rights, working with artists, publishers, and creative industry professionals.',
-      languages: ['English', 'Sinhala'],
-      freeConsultation: false,
-    },
-  ];
+  useEffect(() => {
+    const fetchLawyers = async () => {
+      try {
+        const data = await api.get('/lawyers');
+        setLawyers(data);
+      } catch (error) {
+        toast.error('Failed to fetch lawyers');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchLawyers();
+  }, []);
 
   const specialties = ['all', 'Trademarks', 'Patents', 'Copyrights', 'Industrial Designs', 'IP Strategy'];
   const timeSlots = ['9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'];
 
   const filteredLawyers = lawyers.filter(lawyer => {
     const matchesSearch = lawyer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         lawyer.specialties.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesSpecialty = selectedSpecialty === 'all' || lawyer.specialties.includes(selectedSpecialty);
+                         lawyer.lawyer_details?.specialty?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSpecialty = selectedSpecialty === 'all' || lawyer.lawyer_details?.specialty === selectedSpecialty;
     return matchesSearch && matchesSpecialty;
   });
 
-  const handleBookConsultation = () => {
+  const handleBookConsultation = async () => {
     if (selectedLawyer && selectedDate && selectedTime) {
-      alert(`Consultation booked with ${selectedLawyer.name} on ${selectedDate} at ${selectedTime}`);
-      setSelectedLawyer(null);
-      setSelectedDate('');
-      setSelectedTime('');
+      try {
+        await api.post('/consultations/', {
+          lawyer_id: selectedLawyer.id,
+          consultation_date: selectedDate,
+          consultation_time: selectedTime,
+          description: description
+        });
+        toast.success(`Consultation booked with ${selectedLawyer.name}!`);
+        setSelectedLawyer(null);
+        setSelectedDate('');
+        setSelectedTime('');
+        setDescription('');
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Booking failed');
+      }
     }
   };
 
@@ -152,13 +130,17 @@ const ConsultationPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Lawyer Directory */}
             <div className="space-y-6">
-              {filteredLawyers.map((lawyer) => (
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto"></div>
+                  <p className="mt-4 text-gray-600">Loading lawyers...</p>
+                </div>
+              ) : filteredLawyers.map((lawyer) => (
                 <div key={lawyer.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
                   <div className="flex flex-col lg:flex-row lg:items-start space-y-4 lg:space-y-0 lg:space-x-6">
                     <img 
-                      src={lawyer.image} 
+                      src={lawyer.profile_picture || 'https://images.pexels.com/photos/3760263/pexels-photo-3760263.jpeg?auto=compress&cs=tinysrgb&w=300'} 
                       alt={lawyer.name}
                       className="w-24 h-24 rounded-full object-cover mx-auto lg:mx-0"
                     />
@@ -167,29 +149,21 @@ const ConsultationPage: React.FC = () => {
                         <div className="mb-4 lg:mb-0">
                           <div className="flex items-center space-x-3 mb-2">
                             <h3 className="text-xl font-semibold text-gray-900">{lawyer.name}</h3>
-                            {lawyer.freeConsultation && (
-                              <span className="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-medium rounded-full">
-                                Free Consultation
-                              </span>
-                            )}
                           </div>
-                          <p className="text-blue-600 font-medium mb-2">{lawyer.title}</p>
+                          <p className="text-blue-600 font-medium mb-2">{lawyer.lawyer_details?.specialty || 'General Practitioner'}</p>
                           <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
                             <div className="flex items-center space-x-1">
                               <Award className="h-4 w-4" />
-                              <span>{lawyer.experience} years experience</span>
+                              <span>{lawyer.lawyer_details?.cases_handled || 0} cases handled</span>
                             </div>
                             <div className="flex items-center space-x-1">
                               <MapPin className="h-4 w-4" />
-                              <span>{lawyer.location}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <span>Languages: {lawyer.languages.join(', ')}</span>
+                              <span>Colombo, Sri Lanka</span>
                             </div>
                           </div>
                         </div>
                         <div className="text-center lg:text-right">
-                          <div className="text-2xl font-bold text-gray-900">{lawyer.hourlyRate}</div>
+                          <div className="text-2xl font-bold text-gray-900">LKR 20,000</div>
                           <div className="text-sm text-gray-600">per hour</div>
                         </div>
                       </div>
@@ -201,28 +175,26 @@ const ConsultationPage: React.FC = () => {
                               <Star
                                 key={i}
                                 className={`h-4 w-4 ${
-                                  i < Math.floor(lawyer.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                  i < 4 ? 'text-yellow-400 fill-current' : 'text-gray-300'
                                 }`}
                               />
                             ))}
                           </div>
-                          <span className="text-sm font-medium">{lawyer.rating}</span>
-                          <span className="text-sm text-gray-600">({lawyer.reviews} reviews)</span>
-                          <span className="text-sm text-emerald-600 font-medium">{lawyer.availability}</span>
+                          <span className="text-sm font-medium">4.8</span>
+                          <span className="text-sm text-gray-600">(50 reviews)</span>
                         </div>
                         
                         <div className="flex flex-wrap gap-2 mb-4">
-                          {lawyer.specialties.map((specialty) => (
+                          {lawyer.lawyer_details?.specialty && (
                             <span
-                              key={specialty}
                               className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full"
                             >
-                              {specialty}
+                              {lawyer.lawyer_details.specialty}
                             </span>
-                          ))}
+                          )}
                         </div>
                         
-                        <p className="text-gray-700 mb-4">{lawyer.bio}</p>
+                        <p className="text-gray-700 mb-4">{lawyer.bio || 'Experienced IP lawyer ready to assist with your legal needs.'}</p>
                         
                         <div className="flex flex-wrap gap-3">
                           <button
@@ -234,9 +206,6 @@ const ConsultationPage: React.FC = () => {
                           <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2">
                             <MessageSquare className="h-4 w-4" />
                             <span>Message</span>
-                          </button>
-                          <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                            View Profile
                           </button>
                         </div>
                       </div>
@@ -267,17 +236,14 @@ const ConsultationPage: React.FC = () => {
                 </button>
                 <div className="flex items-center space-x-4">
                   <img 
-                    src={selectedLawyer.image} 
+                    src={selectedLawyer.profile_picture || 'https://images.pexels.com/photos/3760263/pexels-photo-3760263.jpeg?auto=compress&cs=tinysrgb&w=300'} 
                     alt={selectedLawyer.name}
                     className="w-16 h-16 rounded-full object-cover"
                   />
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">{selectedLawyer.name}</h2>
-                    <p className="text-blue-600">{selectedLawyer.title}</p>
-                    <p className="text-gray-600">{selectedLawyer.hourlyRate} per hour</p>
-                    {selectedLawyer.freeConsultation && (
-                      <p className="text-emerald-600 font-medium text-sm">Free first consultation available</p>
-                    )}
+                    <p className="text-blue-600">{selectedLawyer.lawyer_details?.specialty || 'General Practitioner'}</p>
+                    <p className="text-gray-600">LKR 20,000 per hour</p>
                   </div>
                 </div>
               </div>
@@ -368,6 +334,8 @@ const ConsultationPage: React.FC = () => {
                   </label>
                   <textarea
                     rows={4}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Please provide a brief overview of your IP matter..."
                   />
@@ -406,7 +374,7 @@ const ConsultationPage: React.FC = () => {
                       <p>Type: {consultationType === 'video' ? 'Video Call' : consultationType === 'phone' ? 'Phone Call' : 'In Person'}</p>
                       <p>Date: {selectedDate}</p>
                       <p>Time: {selectedTime}</p>
-                      <p>Rate: {selectedLawyer.freeConsultation ? 'Free (First consultation)' : selectedLawyer.hourlyRate + '/hour'}</p>
+                      <p>Rate: LKR 20,000/hour</p>
                     </div>
                   </div>
                 )}

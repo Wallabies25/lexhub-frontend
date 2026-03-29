@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageSquare, Search, Calendar, Users, TrendingUp, FileText, Clock, Star, Brain } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { api } from '../utils/api';
+import { toast } from 'react-toastify';
 
 interface ForumPost {
   id: string;
@@ -19,19 +21,26 @@ interface ResearchQuery {
   category: string;
 }
 
-interface Consultation {
-  id: string;
-  clientName: string;
-  date: string;
-  time: string;
-  type: string;
-  status: string;
-}
-
 const LawyerDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('forum');
+  const [activeTab, setActiveTab] = useState('schedule');
   const [searchQuery, setSearchQuery] = useState('');
+  const [consultations, setConsultations] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { t } = useLanguage();
+
+  useEffect(() => {
+    const fetchConsultations = async () => {
+      try {
+        const data = await api.get('/consultations/my-consultations');
+        setConsultations(data);
+      } catch (error) {
+        toast.error('Failed to fetch consultations');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchConsultations();
+  }, []);
 
   const forumPosts: ForumPost[] = [
     {
@@ -333,7 +342,13 @@ const LawyerDashboard: React.FC = () => {
               </div>
               
               <div className="space-y-4">
-                {upcomingConsultations.map((consultation) => (
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900 mx-auto"></div>
+                  </div>
+                ) : consultations.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">No upcoming consultations</div>
+                ) : consultations.map((consultation) => (
                   <div key={consultation.id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
@@ -341,31 +356,48 @@ const LawyerDashboard: React.FC = () => {
                           <Users className="h-6 w-6 text-blue-600" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900">{consultation.clientName}</h3>
+                          <h3 className="font-semibold text-gray-900">{consultation.user?.name || 'Client'}</h3>
                           <div className="flex items-center space-x-3 text-sm text-gray-600">
                             <span className="flex items-center space-x-1">
                               <Calendar className="h-4 w-4" />
-                              <span>{consultation.date}</span>
+                              <span>{consultation.consultation_date}</span>
                             </span>
                             <span className="flex items-center space-x-1">
                               <Clock className="h-4 w-4" />
-                              <span>{consultation.time}</span>
+                              <span>{consultation.consultation_time}</span>
                             </span>
-                            <span>{consultation.type}</span>
                           </div>
+                          <p className="text-xs text-gray-500 mt-1">{consultation.description}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          consultation.status === 'Confirmed'
+                          consultation.status === 'confirmed'
                             ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-yellow-100 text-yellow-800'
+                            : consultation.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {consultation.status}
+                          {consultation.status.charAt(0).toUpperCase() + consultation.status.slice(1)}
                         </span>
-                        <button className="text-blue-600 hover:text-blue-700 font-medium text-sm">
-                          Manage
-                        </button>
+                        {consultation.status === 'pending' && (
+                          <button 
+                            onClick={async () => {
+                              try {
+                                await api.put(`/consultations/${consultation.id}/status?status=confirmed`, {});
+                                toast.success('Consultation confirmed');
+                                // Refresh list
+                                const data = await api.get('/consultations/my-consultations');
+                                setConsultations(data);
+                              } catch (e) {
+                                toast.error('Failed to update status');
+                              }
+                            }}
+                            className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                          >
+                            Confirm
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

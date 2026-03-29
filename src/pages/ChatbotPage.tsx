@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, MessageCircle, User, Bot, Lightbulb, BookOpen, FileText, Award, CheckCircle, Copy, Trash, Mic, MicOff } from 'lucide-react';
 import '../components/chatbot.css';
 import '../components/voice-chat.css';
+import { api } from '../utils/api';
 
 // Add SpeechRecognition type definitions
 declare global {
@@ -646,7 +647,9 @@ const ChatbotPage: React.FC = () => {  const [messages, setMessages] = useState<
       
       return "I'm your friendly IP law assistant, here to help with any intellectual property questions you might have. I can provide information about:\n\n• Trademarks for protecting brand identifiers\n• Copyrights for creative works\n• Patents for inventions and innovations\n• Industrial designs for product appearance\n• Trade secrets for confidential business information\n• IP enforcement strategies\n• Online content protection (including YouTube videos and social media)\n• Sri Lankan IP laws under the Intellectual Property Act No. 36 of 2003\n\nTo help you most effectively, could you share what specific IP topic you're interested in or what creative/business assets you're looking to protect? I'm here to provide clear, practical guidance for your situation.";
     }
-  };const handleSendMessage = async () => {
+  };
+  
+  const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
     const userMessage: Message = {
@@ -660,37 +663,38 @@ const ChatbotPage: React.FC = () => {  const [messages, setMessages] = useState<
     setInputValue('');
     setIsTyping(true);
     
-    // Update conversation context with simplified approach
-    const lowerMessage = inputValue.toLowerCase();
-    const topicMatch = lowerMessage.match(/\b(trademark|copyright|patent|industrial design|infringement|unauthorized access|ip protection)\b/i);
-    
-    if (topicMatch) {
-      setConversationContext(prev => ({
-        ...prev,
-        topic: topicMatch[1].toLowerCase(),
-        followUpSuggested: false
+    try {
+      // Prepare history for real AI (limit to last 10 messages for context)
+      const history = messages.slice(-10).map(msg => ({
+        role: msg.type === 'user' ? 'user' : 'assistant',
+        content: msg.content
       }));
-    }
-    
-    // Get the response content
-    const responseContent = simulateBotResponse(inputValue);
-    
-    // Calculate typing delay based on content length (simulates realistic typing speed)
-    const typingDelay = Math.min(Math.max(responseContent.length * 10, 800), 2500);
-    
-    // Simulate bot response delay
-    setTimeout(() => {
+
+      const response = await api.post('/chat/', {
+        message: inputValue,
+        history: history
+      });
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: responseContent,
+        content: response.content,
         timestamp: new Date(),
-        context: JSON.stringify(conversationContext), // Store context with the message
       };
       
       setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'bot',
+        content: "I'm having trouble connecting to the AI backend. Please ensure the server is running and the API key is configured.",
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, typingDelay);
+    }
   };
 
   const handleQuickQuestion = (question: string) => {

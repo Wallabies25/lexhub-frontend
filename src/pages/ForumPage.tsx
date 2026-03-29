@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, User, Clock, Flag, Trash2, Search, Plus, ThumbsUp, Reply } from 'lucide-react';
+import { MessageSquare, Clock, Flag, Trash2, Search, Plus, ThumbsUp, Reply, MessageCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface ForumPost {
@@ -54,11 +54,10 @@ const ForumPage: React.FC = () => {
       isLiked: false,
     },
   ]);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showNewPostForm, setShowNewPostForm] = useState(false);
-  const { t } = useLanguage();
+  useLanguage(); // Keep the hook but don't destructure unused variables
 
   const categories = [
     'all',
@@ -112,9 +111,7 @@ const ForumPage: React.FC = () => {
                   </button>
                 ))}
               </nav>
-            </div>
-
-            <div className="bg-gradient-to-r from-blue-900 to-emerald-600 rounded-xl p-6 text-white">
+            </div>            <div className="bg-gradient-to-r from-blue-900 to-emerald-600 rounded-xl p-6 text-white">
               <h3 className="font-semibold mb-2">Community Guidelines</h3>
               <ul className="text-sm text-blue-100 space-y-1">
                 <li>• Be respectful and professional</li>
@@ -123,23 +120,47 @@ const ForumPage: React.FC = () => {
                 <li>• Seek professional advice for specific cases</li>
               </ul>
             </div>
+            
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+              <h3 className="font-semibold mb-3 text-gray-900">Join Our Community</h3>
+              <a
+                href="https://t.me/+gDhAxRt-JAs0YzY9"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-full space-x-2 px-4 py-3 bg-[#0088cc] text-white rounded-lg hover:bg-[#0099dd] transition-all duration-200"
+              >
+                <MessageCircle className="h-5 w-5" />
+                <span className="font-medium">Telegram Group</span>
+              </a>
+              <p className="text-xs text-gray-500 mt-2 text-center">Chat informally with friends about IP law issues</p>
+            </div>
           </div>
 
           {/* Main Content */}
-          <div className="flex-1">
-            {/* Header */}
+          <div className="flex-1">            {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Community Forum</h1>
                 <p className="text-gray-600">Discuss IP law topics with legal professionals and peers</p>
               </div>
-              <button
-                onClick={() => setShowNewPostForm(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-900 to-emerald-600 text-white rounded-lg hover:from-blue-800 hover:to-emerald-500 transition-all duration-200"
-              >
-                <Plus className="h-4 w-4" />
-                <span>New Post</span>
-              </button>
+              <div className="flex items-center gap-3">
+                <a
+                  href="https://t.me/+gDhAxRt-JAs0YzY9"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center space-x-2 px-4 py-2 bg-[#0088cc] text-white rounded-lg hover:bg-[#0099dd] transition-all duration-200"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  <span>Our Telegram Group</span>
+                </a>
+                <button
+                  onClick={() => setShowNewPostForm(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-900 to-emerald-600 text-white rounded-lg hover:from-blue-800 hover:to-emerald-500 transition-all duration-200"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>New Post</span>
+                </button>
+              </div>
             </div>
 
             {/* Search Bar */}
