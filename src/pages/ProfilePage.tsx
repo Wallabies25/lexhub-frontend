@@ -212,7 +212,7 @@ const ProfilePage: React.FC = () => {
                       <div key={pub.id} className="flex flex-col sm:flex-row gap-4 pb-6 border-b border-gray-100 last:border-0 last:pb-0">
                         {pub.image_url && (
                           <img 
-                            src={`http://localhost:8080${pub.image_url}`} 
+                            src={`https://lexhub-backend.onrender.com${pub.image_url}`} 
                             alt={pub.title} 
                             className="w-full sm:w-32 h-32 sm:h-24 object-cover rounded-lg bg-gray-100 border border-gray-200"
                           />

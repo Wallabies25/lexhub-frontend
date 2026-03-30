@@ -73,7 +73,7 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       try {
         setSaving(true);
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:8080/users/profile-picture', {
+        const response = await fetch('https://lexhub-backend.onrender.com/users/profile-picture', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -84,7 +84,7 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         if (!response.ok) throw new Error('Upload failed');
         
         const data = await response.json();
-        const newPhotoUrl = `http://localhost:8080${data.profile_picture}`;
+        const newPhotoUrl = `https://lexhub-backend.onrender.com${data.profile_picture}`;
         
         if (updateUser) {
            // We only need to update the local state here since the DB is already updated by the POST
@@ -281,7 +281,7 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                    submitBtn.disabled = true;
                    submitBtn.innerText = "Uploading...";
                    const token = localStorage.getItem('token');
-                   const res = await fetch('http://localhost:8080/lawyers/publications', {
+                   const res = await fetch('https://lexhub-backend.onrender.com/lawyers/publications', {
                      method: 'POST',
                      headers: { 'Authorization': `Bearer ${token}` },
                      body: formData

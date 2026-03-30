@@ -63,7 +63,7 @@ const CaseWorkspace: React.FC = () => {
     try {
       setIsUploading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/cases/${id}/documents`, {
+      const response = await fetch(`https://lexhub-backend.onrender.com/cases/${id}/documents`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
@@ -293,7 +293,7 @@ const CaseWorkspace: React.FC = () => {
                             </div>
                           </div>
                           <a 
-                            href={`http://localhost:8080${doc.file_url}`} 
+                            href={`https://lexhub-backend.onrender.com${doc.file_url}`} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="p-2 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-100 text-blue-900 rounded-full hover:bg-blue-200"

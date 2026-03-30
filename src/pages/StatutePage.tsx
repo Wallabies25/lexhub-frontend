@@ -142,7 +142,7 @@ const StatutePage: React.FC = () => {
     try {
       setDownloadStatus(prev => ({ ...prev, [doc.id]: 'loading' }));
       
-      const fullUrl = `http://localhost:8080${doc.file_url}`;
+      const fullUrl = `https://lexhub-backend.onrender.com${doc.file_url}`;
       window.open(fullUrl, '_blank');
       
       setDownloadStatus(prev => ({ ...prev, [doc.id]: 'success' }));
@@ -158,7 +158,7 @@ const StatutePage: React.FC = () => {
   };
 
   const handleDocumentPreview = (doc: StatuteDocument) => {
-    const fullUrl = `http://localhost:8080${doc.file_url}`;
+    const fullUrl = `https://lexhub-backend.onrender.com${doc.file_url}`;
     window.open(fullUrl, '_blank');
   };
 
@@ -626,7 +626,7 @@ const StatutePage: React.FC = () => {
                   return;
                 }
 
-                const response = await fetch('http://localhost:8080/statutes/upload', {
+                const response = await fetch('https://lexhub-backend.onrender.com/statutes/upload', {
                   method: 'POST',
                   headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`

@@ -41,7 +41,7 @@ npm run mock-api
 
 ## API Endpoints
 
-The mock server runs on http://localhost:8080 and provides the following endpoints:
+The mock server runs on https://lexhub-backend.onrender.com and provides the following endpoints:
 
 ### Authentication
 

@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = 'https://lexhub-backend.onrender.com';
 
 async function request(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem('token');
