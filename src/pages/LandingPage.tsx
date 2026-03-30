@@ -123,7 +123,7 @@ const LandingPage: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                to="/chatbot"
+                to="/auth"
                 className="inline-flex items-center px-8 py-4 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-semibold text-lg"
               >
                 {t('hero.cta')}
@@ -172,7 +172,7 @@ const LandingPage: React.FC = () => {
             {/* AI Legal Assistant Feature */}
             <div
               className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
-              onClick={() => navigate('/ai-assistant')}
+              onClick={() => navigate('/auth')}
             >
               <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <MessageCircle className="h-8 w-8" />
@@ -187,7 +187,7 @@ const LandingPage: React.FC = () => {
             {/* Statute Database Feature */}
             <div
               className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
-              onClick={() => navigate('/statute-overview')}
+              onClick={() => navigate('/auth')}
             >
               <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <BookOpen className="h-8 w-8" />
@@ -202,7 +202,7 @@ const LandingPage: React.FC = () => {
             {/* Expert Consultation Feature */}
             <div
               className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
-              onClick={() => navigate('/consultation-overview')}
+              onClick={() => navigate('/auth')}
             >
               <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Users className="h-8 w-8" />
@@ -267,7 +267,7 @@ const LandingPage: React.FC = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              to="/auth"
+              to="/chatbot"
               className="inline-flex items-center px-8 py-4 bg-white text-blue-900 rounded-xl hover:bg-gray-100 transition-colors font-semibold text-lg"
             >
               Get Started Free

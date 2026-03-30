@@ -57,7 +57,14 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateUser = async (updates: Partial<any>) => {
-    setUser((prev: any) => ({ ...prev, ...updates }));
+    try {
+      if (user?.id) {
+        await api.put(`/users/profile/${user.id}`, updates);
+      }
+      setUser((prev: any) => ({ ...prev, ...updates }));
+    } catch (err) {
+      console.error('Failed to update user profile', err);
+    }
   };
 
   return (

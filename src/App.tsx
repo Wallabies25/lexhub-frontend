@@ -8,6 +8,7 @@ import ForumPage from './pages/ForumPage';
 import ConsultationPage from './pages/ConsultationPage';
 import StudentDashboard from './pages/StudentDashboard';
 import LawyerDashboard from './pages/LawyerDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import AuthPage from './pages/AuthPage';
 import AboutPage from './pages/AboutPage';
 import { LanguageProvider } from './contexts/LanguageContext';
@@ -18,11 +19,15 @@ import StatuteOverview from './pages/StatuteOverview';
 import ConsultationOverview from './pages/ConsultationOverview';
 import { UserProvider } from './contexts/UserContext';
 import BlogsPage from './pages/BlogsPage';
+import ProfilePage from './pages/ProfilePage';
+import CaseWorkspace from './pages/CaseWorkspace';
+import OngoingCases from './pages/OngoingCases';
+import ReportsPage from './pages/ReportsPage';
 
 function AppContent() {
   const location = useLocation();
   const { currentTheme } = useTheme();  // Remove header for overview pages and auth page
-  const noHeaderRoutes = ['/', '/ai-assistant', '/statute-overview', '/consultation-overview', '/auth'];
+  const noHeaderRoutes = ['/', '/ai-assistant', '/statute-overview', '/consultation-overview', '/auth', '/admin-dashboard'];
   const hideHeader = noHeaderRoutes.includes(location.pathname);
   
   // Update document metadata based on theme
@@ -62,9 +67,14 @@ function AppContent() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/student-dashboard" element={<StudentDashboard />} />
         <Route path="/lawyer-dashboard" element={<LawyerDashboard />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/ai-assistant" element={<AIAssistantOverview />} />
         <Route path="/blogs" element={<BlogsPage />} />
+        <Route path="/profile/:id" element={<ProfilePage />} />
+        <Route path="/case/:id" element={<CaseWorkspace />} />
+        <Route path="/ongoing-cases" element={<OngoingCases />} />
+        <Route path="/reports" element={<ReportsPage />} />
       </Routes>
     </div>
   );

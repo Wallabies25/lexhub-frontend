@@ -120,6 +120,8 @@ const AuthPage: React.FC = () => {
         
         if (userRole === 'lawyer') {
           navigate('/lawyer-dashboard');
+        } else if (userRole === 'admin') {
+          navigate('/admin-dashboard');
         } else {
           navigate('/student-dashboard');
         }
