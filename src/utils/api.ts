@@ -8,10 +8,15 @@ async function request(endpoint: string, options: RequestInit = {}) {
     ...options.headers,
   };
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  const cleanBaseUrl = BASE_URL.replace(/\/$/, '');
+  const cleanEndpoint = endpoint.replace(/^\//, '');
+  const url = `${cleanBaseUrl}/${cleanEndpoint}`;
+
+  const response = await fetch(url, {
     ...options,
     headers,
   });
+
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ detail: 'An error occurred' }));
